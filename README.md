@@ -204,22 +204,3 @@ MIT License
 ---
 
 *Built by [Yassin Youssef]*
-```
-
-Save it. Then you also need a `.gitignore` file so you don't upload unnecessary files. Run:
-```
-Set-Content -Path ".gitignore" -Value "venv/`n__pycache__/`n*.pyc`n.DS_Store`nThumbs.db`n*.egg-info/`n.env"
-```
-
-Now your project is ready for GitHub. Your folder should look like:
-```
-spaceai-fc/
-├── engine/
-├── outputs/          (with all 6 images)
-├── notebooks/
-├── tests/
-├── main.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── venv/             (won't be uploaded thanks to .gitignore)
