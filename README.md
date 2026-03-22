@@ -203,7 +203,7 @@ MIT License
 
 ---
 
-*Built by [Your Name]*
+*Built by [Yassin Youssef]*
 ```
 
 Save it. Then you also need a `.gitignore` file so you don't upload unnecessary files. Run:
