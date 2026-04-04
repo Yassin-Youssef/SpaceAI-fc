@@ -1,0 +1,101 @@
+﻿
+=======================================================
+  FORMATION DETECTION
+=======================================================
+
+  Team: FC Barcelona
+  Formation: 4-2-3-1
+  Confidence: 100%
+  Method: clustering
+
+  DEF (avg x=28):
+    KoundΘ, Ara·jo, Cubarsφ, BaldΘ
+
+  DM (avg x=45):
+    Pedri, De Jong
+
+  AM (avg x=63):
+    Lamine, Gavi, Raphinha
+
+  ATT (avg x=80):
+    Lewandowski
+
+=======================================================
+Saved: outputs/formation_barca.png
+
+=======================================================
+  FORMATION DETECTION
+=======================================================
+
+  Team: Real Madrid
+  Formation: 4-3-3
+  Confidence: 100%
+  Method: clustering
+
+  DEF (avg x=92):
+    Carvajal, Rⁿdiger, Militπo, Mendy
+
+  MID (avg x=71):
+    TchouamΘni, Valverde, Bellingham
+
+  ATT (avg x=53):
+    Rodrygo, MbappΘ, Vinφcius
+
+=======================================================
+Saved: outputs/formation_madrid.png
+
+=======================================================
+  FORMATION CHANGE DETECTION
+=======================================================
+  Frame 0: 4-2-3-1 (conf: 100%) [same]
+.\venv\Scripts\python.e
+xe : Traceback (most 
+recent call last):
+At line:1 char:24
++ ... KEND='Agg'; .\ven
+v\Scripts\python.exe en
+gine/analysis/formation
+_detec ...
++                 ~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Traceback (mo   
+ st recent call las    
+t)::String) [], Re    
+moteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  File "C:\Users\omari\
+OneDrive - Constructor 
+University\SpaceAI FC\e
+ngine\analysis\formatio
+n_detection.py", line 
+501, in <module>
+    print(f"  Frame 
+{c['frame']}: 
+{c['formation']} 
+(conf: 
+{c['confidence']:.0%}) 
+[{changed}]")
+  File "C:\Users\omari\
+AppData\Local\Programs\
+Python\Python312\Lib\en
+codings\cp1252.py", 
+line 19, in encode
+    return codecs.charm
+ap_encode(input,self.er
+rors,encoding_table)[0]
+           ^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character 
+'\u26a0' in position 
+28: character maps to 
+<undefined>

@@ -3,6 +3,12 @@ SpaceAI FC - Match Summary Generator
 ======================================
 Combines all analysis modules into one structured match report.
 This is the central piece that ties the engine together.
+
+Phase 2 additions:
+    - Formation detection via FormationDetector (replaces simple method)
+    - Player role classification
+    - Press resistance analysis
+    - Tactical pattern detection
 """
 
 import matplotlib.pyplot as plt
@@ -19,6 +25,10 @@ class MatchReport:
         - Player positions and formations
         - Pass network analysis
         - Space control analysis
+        - Formation detection (Phase 2)
+        - Player roles (Phase 2)
+        - Press resistance (Phase 2)
+        - Tactical patterns (Phase 2)
     
     Outputs:
         - Structured text report
@@ -33,8 +43,17 @@ class MatchReport:
         self.pass_network = None
         self.space_control = None
         self.match_info = {}
+        
+        # Phase 2 modules
+        self.formation_detector_a = None
+        self.formation_detector_b = None
+        self.role_classifier_a = None
+        self.role_classifier_b = None
+        self.press_resistance = None
+        self.pattern_detector = None
     
-    # Setup    
+    # ── Setup ───────────────────────────────────────────────────
+    
     def set_match_info(self, home_team, away_team, score_home=0, score_away=0,
                        minute=0, competition="Friendly", date=None):
         """Set general match information."""
@@ -68,7 +87,37 @@ class MatchReport:
         """Attach a computed SpaceControl object."""
         self.space_control = space_control
     
-    # Analysis: detect formation from positions
+    # Phase 2 setters
+    
+    def set_formation_detector(self, detector_a, detector_b=None):
+        """Attach FormationDetector objects for both teams."""
+        self.formation_detector_a = detector_a
+        self.formation_detector_b = detector_b
+    
+    def set_role_classifier(self, classifier_a, classifier_b=None):
+        """Attach RoleClassifier objects for both teams."""
+        self.role_classifier_a = classifier_a
+        self.role_classifier_b = classifier_b
+    
+    def set_press_resistance(self, press_resistance):
+        """Attach a PressResistance object."""
+        self.press_resistance = press_resistance
+    
+    def set_pattern_detector(self, pattern_detector):
+        """Attach a PatternDetector object."""
+        self.pattern_detector = pattern_detector
+    
+    # ── Formation Detection ─────────────────────────────────────
+    
+    def _detect_formation(self, players, detector=None):
+        """
+        Detect formation using FormationDetector if available,
+        otherwise fall back to simple gap-based method.
+        """
+        if detector is not None:
+            result = detector.detect()
+            return result['formation']
+        return self._detect_formation_simple(players)
     
     def _detect_formation_simple(self, players):
         """
@@ -76,7 +125,7 @@ class MatchReport:
         based on x-coordinate clustering.
         
         Detects which side the team is on and reads defense-to-attack.
-        This is a basic version — Phase 2 will have proper detection.
+        This is a basic version — Phase 2 FormationDetector is preferred.
         """
         outfield = [p for p in players if p.get('position') != 'GK']
         
@@ -124,7 +173,7 @@ class MatchReport:
         
         return "Unknown"
     
-    # Generate full report data
+    # ── Generate full report data ───────────────────────────────
     
     def generate_report(self):
         """
@@ -136,19 +185,34 @@ class MatchReport:
             'match_info': self.match_info,
             'team_a': {
                 'name': self.team_a['name'],
-                'formation': self._detect_formation_simple(self.team_a['players']),
+                'formation': self._detect_formation(
+                    self.team_a['players'], self.formation_detector_a),
                 'player_count': len(self.team_a['players']),
             },
             'team_b': {
                 'name': self.team_b['name'],
-                'formation': self._detect_formation_simple(self.team_b['players']),
+                'formation': self._detect_formation(
+                    self.team_b['players'], self.formation_detector_b),
                 'player_count': len(self.team_b['players']),
             },
             'pass_analysis': None,
             'space_analysis': None,
+            'roles_a': None,
+            'roles_b': None,
+            'press_resistance': None,
+            'patterns_a': None,
+            'patterns_b': None,
             'insights': [],
             'recommendations': [],
         }
+        
+        # Formation confidence (Phase 2)
+        if self.formation_detector_a:
+            r = self.formation_detector_a.detect()
+            report['team_a']['formation_confidence'] = r['confidence']
+        if self.formation_detector_b:
+            r = self.formation_detector_b.detect()
+            report['team_b']['formation_confidence'] = r['confidence']
         
         # Pass network analysis
         if self.pass_network:
@@ -222,12 +286,76 @@ class MatchReport:
                     f"{ta} should press higher or switch play faster"
                 )
         
+        # ── Phase 2: Player Roles ───────────────────────────────
+        if self.role_classifier_a:
+            roles = self.role_classifier_a.classify_all()
+            report['roles_a'] = roles
+            # Add notable role insights
+            for r in roles:
+                if r['role'] in ('False Nine', 'Sweeper Keeper', 'Inverted Winger',
+                                 'Inverted Fullback', 'Shadow Striker'):
+                    report['insights'].append(
+                        f"{r['name']} operating as {r['role']} ({r['confidence']:.0%} conf.)"
+                    )
+        
+        if self.role_classifier_b:
+            roles = self.role_classifier_b.classify_all()
+            report['roles_b'] = roles
+        
+        # ── Phase 2: Press Resistance ───────────────────────────
+        if self.press_resistance:
+            pr_result = self.press_resistance.analyze()
+            report['press_resistance'] = pr_result
+            
+            score = pr_result['press_resistance_score']
+            team = self.press_resistance.team_name
+            
+            if score >= 70:
+                report['insights'].append(
+                    f"{team} shows strong press resistance (score: {score:.0f}/100)"
+                )
+            elif score < 45:
+                report['insights'].append(
+                    f"{team} is vulnerable under pressure (score: {score:.0f}/100)"
+                )
+                report['recommendations'].append(
+                    f"{team} should vary build-up routes to avoid press traps"
+                )
+            
+            if pr_result['vulnerable_zones']:
+                worst = pr_result['vulnerable_zones'][0]
+                report['recommendations'].append(
+                    f"Avoid building through {worst['zone']} "
+                    f"(only {worst['success_rate']:.0%} success rate)"
+                )
+        
+        # ── Phase 2: Tactical Patterns ──────────────────────────
+        if self.pattern_detector:
+            patterns_a = self.pattern_detector.detect_all(team="a")
+            patterns_b = self.pattern_detector.detect_all(team="b")
+            report['patterns_a'] = patterns_a
+            report['patterns_b'] = patterns_b
+            
+            ta = self.team_a['name']
+            tb = self.team_b['name']
+            
+            for p in patterns_a:
+                if p['detected']:
+                    report['insights'].append(
+                        f"{ta}: {p['pattern']} detected ({p['confidence']:.0%} conf.)"
+                    )
+            for p in patterns_b:
+                if p['detected']:
+                    report['insights'].append(
+                        f"{tb}: {p['pattern']} detected ({p['confidence']:.0%} conf.)"
+                    )
+        
         if not report['recommendations']:
             report['recommendations'].append("Maintain current tactical approach — balanced performance detected")
         
         return report
     
-    # Text output
+    # ── Text output ─────────────────────────────────────────────
     
     def print_report(self):
         """Print a complete formatted match report."""
@@ -244,8 +372,12 @@ class MatchReport:
         print(f"  Date: {mi.get('date', 'N/A')}    Minute: {mi.get('minute', 0)}'")
         
         print(f"\n  --- FORMATIONS ---")
-        print(f"  {report['team_a']['name']}: {report['team_a']['formation']}")
-        print(f"  {report['team_b']['name']}: {report['team_b']['formation']}")
+        conf_a = report['team_a'].get('formation_confidence', '')
+        conf_b = report['team_b'].get('formation_confidence', '')
+        conf_a_str = f" ({conf_a:.0%} conf.)" if conf_a else ""
+        conf_b_str = f" ({conf_b:.0%} conf.)" if conf_b else ""
+        print(f"  {report['team_a']['name']}: {report['team_a']['formation']}{conf_a_str}")
+        print(f"  {report['team_b']['name']}: {report['team_b']['formation']}{conf_b_str}")
         
         if report['pass_analysis']:
             pa = report['pass_analysis']
@@ -264,6 +396,33 @@ class MatchReport:
             print(f"  {report['team_b']['name']}: {overall['team_b_control']}%")
             print(f"  Midfield: {report['team_a']['name']} {mid['team_a']}% | {report['team_b']['name']} {mid['team_b']}%")
         
+        # Phase 2 sections
+        if report['roles_a']:
+            print(f"\n  --- PLAYER ROLES ({report['team_a']['name']}) ---")
+            for r in report['roles_a']:
+                print(f"  #{r['number']:2d} {r['name']:15s} -> {r['role']}")
+        
+        if report['press_resistance']:
+            pr = report['press_resistance']
+            print(f"\n  --- PRESS RESISTANCE ---")
+            print(f"  Score: {pr['press_resistance_score']:.0f}/100")
+            print(f"  Success Under Pressure: {pr['pass_success_under_pressure']:.0%}")
+            print(f"  Escape Rate: {pr['escape_rate']:.0%}")
+        
+        if report['patterns_a']:
+            detected = [p for p in report['patterns_a'] if p['detected']]
+            if detected:
+                print(f"\n  --- TACTICAL PATTERNS ({report['team_a']['name']}) ---")
+                for p in detected:
+                    print(f"  [+] {p['pattern']} ({p['confidence']:.0%})")
+        
+        if report['patterns_b']:
+            detected = [p for p in report['patterns_b'] if p['detected']]
+            if detected:
+                print(f"\n  --- TACTICAL PATTERNS ({report['team_b']['name']}) ---")
+                for p in detected:
+                    print(f"  [+] {p['pattern']} ({p['confidence']:.0%})")
+        
         print(f"\n  --- KEY INSIGHTS ---")
         for i, insight in enumerate(report['insights'], 1):
             print(f"  {i}. {insight}")
@@ -276,7 +435,7 @@ class MatchReport:
         print("|" + " " * 18 + "End of Report" + " " * 29 + "|")
         print("+" + "=" * 60 + "+\n")
     
-    # Visual dashboard
+    # ── Visual dashboard ────────────────────────────────────────
     
     def draw_dashboard(self, figsize=(20, 14)):
         """
@@ -296,7 +455,7 @@ class MatchReport:
         fig.suptitle(title, color='white', fontsize=18, fontweight='bold', y=0.98)
         
         ax1 = fig.add_subplot(gs[0, 0])
-        self._draw_pitch_panel(ax1)
+        self._draw_pitch_panel(ax1, report)
         
         ax2 = fig.add_subplot(gs[0, 1])
         self._draw_pass_panel(ax2)
@@ -309,8 +468,8 @@ class MatchReport:
         
         return fig
     
-    def _draw_pitch_panel(self, ax):
-        """Draw pitch with both teams."""
+    def _draw_pitch_panel(self, ax, report=None):
+        """Draw pitch with both teams and formation labels."""
         pitch = Pitch(pitch_type='statsbomb', pitch_color='#1a1a2e',
                       line_color='#e0e0e0', linewidth=1, goal_type='box')
         pitch.draw(ax=ax)
@@ -336,8 +495,14 @@ class MatchReport:
             ax.scatter(self.ball_pos[0], self.ball_pos[1], c='#f1c40f', s=80,
                        edgecolors='white', linewidths=1.5, zorder=8)
         
-        form_a = self._detect_formation_simple(self.team_a['players'])
-        form_b = self._detect_formation_simple(self.team_b['players'])
+        # Use Phase 2 detector if available
+        if report:
+            form_a = report['team_a']['formation']
+            form_b = report['team_b']['formation']
+        else:
+            form_a = self._detect_formation(self.team_a['players'], self.formation_detector_a)
+            form_b = self._detect_formation(self.team_b['players'], self.formation_detector_b)
+        
         ax.text(25, -3, f"{self.team_a['name']}: {form_a}", ha='center',
                 color=self.team_a['color'], fontsize=9, fontweight='bold')
         ax.text(95, -3, f"{self.team_b['name']}: {form_b}", ha='center',
@@ -427,7 +592,7 @@ class MatchReport:
                 ha='center', color='white', fontsize=9, fontweight='bold')
     
     def _draw_stats_panel(self, ax, report=None):
-        """Draw stats and insights text panel."""
+        """Draw stats and insights text panel (with Phase 2 data)."""
         if report is None:
             report = self.generate_report()
         
@@ -442,7 +607,7 @@ class MatchReport:
         mi = report['match_info']
         
         y = 9.5
-        line_height = 0.45
+        line_height = 0.38
         
         score_text = f"{mi.get('home_team', 'Home')} {mi.get('score_home', 0)} - {mi.get('score_away', 0)} {mi.get('away_team', 'Away')}"
         ax.text(5, y, score_text, ha='center', va='top', fontsize=13,
@@ -451,45 +616,55 @@ class MatchReport:
         
         ax.text(5, y, f"{mi.get('competition', '')}  |  {mi.get('minute', 0)}'",
                 ha='center', va='top', fontsize=9, color='#aaaaaa')
-        y -= line_height * 1.8
+        y -= line_height * 1.5
         
-        ax.text(0.5, y, "FORMATIONS", va='top', fontsize=10,
+        # Formations
+        ax.text(0.5, y, "FORMATIONS", va='top', fontsize=9,
                 fontweight='bold', color='#f1c40f')
         y -= line_height
         ax.text(0.5, y, f"{report['team_a']['name']}: {report['team_a']['formation']}",
-                va='top', fontsize=9, color='white')
+                va='top', fontsize=8, color='white')
         y -= line_height
         ax.text(0.5, y, f"{report['team_b']['name']}: {report['team_b']['formation']}",
-                va='top', fontsize=9, color='white')
-        y -= line_height * 1.5
+                va='top', fontsize=8, color='white')
+        y -= line_height * 1.2
         
-        ax.text(0.5, y, "KEY INSIGHTS", va='top', fontsize=10,
+        # Press Resistance (Phase 2)
+        if report['press_resistance']:
+            pr = report['press_resistance']
+            ax.text(0.5, y, "PRESS RESISTANCE", va='top', fontsize=9,
+                    fontweight='bold', color='#f1c40f')
+            y -= line_height
+            score_val = pr['press_resistance_score']
+            score_color = '#2ecc71' if score_val >= 65 else '#f39c12' if score_val >= 45 else '#e74c3c'
+            ax.text(0.5, y, f"Score: {score_val:.0f}/100  |  "
+                    f"Pressure success: {pr['pass_success_under_pressure']:.0%}",
+                    va='top', fontsize=8, color=score_color)
+            y -= line_height * 1.2
+        
+        # Key Insights
+        ax.text(0.5, y, "KEY INSIGHTS", va='top', fontsize=9,
                 fontweight='bold', color='#f1c40f')
         y -= line_height
         
         for insight in report['insights'][:5]:
-            if len(insight) > 55:
-                ax.text(0.5, y, insight[:55] + "...", va='top',
-                        fontsize=8, color='white')
-            else:
-                ax.text(0.5, y, insight, va='top', fontsize=8, color='white')
+            display = insight[:55] + "..." if len(insight) > 55 else insight
+            ax.text(0.5, y, display, va='top', fontsize=7, color='white')
             y -= line_height
         
-        y -= line_height * 0.5
+        y -= line_height * 0.3
         
-        ax.text(0.5, y, "RECOMMENDATIONS", va='top', fontsize=10,
+        # Recommendations
+        ax.text(0.5, y, "RECOMMENDATIONS", va='top', fontsize=9,
                 fontweight='bold', color='#2ecc71')
         y -= line_height
         
-        for rec in report['recommendations'][:4]:
-            if len(rec) > 55:
-                ax.text(0.5, y, "• " + rec[:55] + "...", va='top',
-                        fontsize=8, color='white')
-            else:
-                ax.text(0.5, y, "• " + rec, va='top', fontsize=8, color='white')
+        for rec in report['recommendations'][:3]:
+            display = rec[:55] + "..." if len(rec) > 55 else rec
+            ax.text(0.5, y, "• " + display, va='top', fontsize=7, color='white')
             y -= line_height
     
-    # Save
+    # ── Save ────────────────────────────────────────────────────
     
     def save_dashboard(self, fig, filename="match_report.png"):
         """Save the dashboard to outputs folder."""
@@ -497,10 +672,10 @@ class MatchReport:
                     facecolor=fig.get_facecolor())
         print(f"Saved: outputs/{filename}")
     
-    # Word document export
+    # ── Word document export ────────────────────────────────────
     
     def export_document(self, filename="match_report.docx"):
-        """Export the match report as a Word document."""
+        """Export the match report as a Word document with Phase 2 sections."""
         from docx import Document as DocxDocument
         from docx.shared import Inches, Pt, RGBColor
         from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -548,8 +723,12 @@ class MatchReport:
         h = doc.add_heading("Formations", level=1)
         h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
         
-        doc.add_paragraph(f"{report['team_a']['name']}: {report['team_a']['formation']}")
-        doc.add_paragraph(f"{report['team_b']['name']}: {report['team_b']['formation']}")
+        conf_a = report['team_a'].get('formation_confidence', '')
+        conf_b = report['team_b'].get('formation_confidence', '')
+        conf_a_str = f" (confidence: {conf_a:.0%})" if conf_a else ""
+        conf_b_str = f" (confidence: {conf_b:.0%})" if conf_b else ""
+        doc.add_paragraph(f"{report['team_a']['name']}: {report['team_a']['formation']}{conf_a_str}")
+        doc.add_paragraph(f"{report['team_b']['name']}: {report['team_b']['formation']}{conf_b_str}")
         
         # Pass Analysis
         if report['pass_analysis']:
@@ -623,6 +802,70 @@ class MatchReport:
                 style='List Bullet'
             )
         
+        # ── Phase 2: Player Roles ───────────────────────────────
+        if report['roles_a'] or report['roles_b']:
+            h = doc.add_heading("Player Roles", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            if report['roles_a']:
+                h2 = doc.add_heading(report['team_a']['name'], level=2)
+                h2.runs[0].font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                for r in report['roles_a']:
+                    doc.add_paragraph(
+                        f"#{r['number']} {r['name']}: {r['role']} ({r['confidence']:.0%})",
+                        style='List Bullet'
+                    )
+            
+            if report['roles_b']:
+                h2 = doc.add_heading(report['team_b']['name'], level=2)
+                h2.runs[0].font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                for r in report['roles_b']:
+                    doc.add_paragraph(
+                        f"#{r['number']} {r['name']}: {r['role']} ({r['confidence']:.0%})",
+                        style='List Bullet'
+                    )
+        
+        # ── Phase 2: Press Resistance ───────────────────────────
+        if report['press_resistance']:
+            pr = report['press_resistance']
+            h = doc.add_heading("Press Resistance", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            score = pr['press_resistance_score']
+            rating = "Excellent" if score >= 75 else "Good" if score >= 60 else "Average" if score >= 45 else "Poor"
+            
+            doc.add_paragraph(f"Press Resistance Score: {score:.0f}/100 ({rating})")
+            doc.add_paragraph(f"Passes Under Pressure: {pr['passes_under_pressure']}/{pr['total_passes']}")
+            doc.add_paragraph(f"Success Under Pressure: {pr['pass_success_under_pressure']:.0%}")
+            doc.add_paragraph(f"Escape Rate: {pr['escape_rate']:.0%}")
+            
+            if pr['vulnerable_zones']:
+                h2 = doc.add_heading("Vulnerable Zones", level=2)
+                h2.runs[0].font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                for vz in pr['vulnerable_zones']:
+                    doc.add_paragraph(
+                        f"{vz['zone']}: {vz['success_rate']:.0%} success ({vz['total_passes']} passes)",
+                        style='List Bullet'
+                    )
+        
+        # ── Phase 2: Tactical Patterns ──────────────────────────
+        if report['patterns_a'] or report['patterns_b']:
+            h = doc.add_heading("Tactical Patterns", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            for team_key, team_lbl in [('patterns_a', report['team_a']['name']),
+                                        ('patterns_b', report['team_b']['name'])]:
+                patterns = report.get(team_key) or []
+                detected = [p for p in patterns if p['detected']]
+                if detected:
+                    h2 = doc.add_heading(team_lbl, level=2)
+                    h2.runs[0].font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                    for p in detected:
+                        doc.add_paragraph(
+                            f"{p['pattern']} ({p['confidence']:.0%}): {p['description']}",
+                            style='List Bullet'
+                        )
+        
         # Visualizations
         h = doc.add_heading("Visualizations", level=1)
         h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
@@ -633,7 +876,14 @@ class MatchReport:
             ("outputs/03_pass_sequence.png", "Build-Up Sequence"),
             ("outputs/04_space_voronoi.png", "Space Control (Voronoi)"),
             ("outputs/05_space_influence.png", "Space Control (Influence)"),
-            ("outputs/06_match_dashboard.png", "Full Match Dashboard"),
+            ("outputs/06_formation_barca.png", "Formation Detection (Barcelona)"),
+            ("outputs/06_formation_madrid.png", "Formation Detection (Real Madrid)"),
+            ("outputs/07_roles_barca.png", "Player Roles (Barcelona)"),
+            ("outputs/07_roles_madrid.png", "Player Roles (Real Madrid)"),
+            ("outputs/08_press_resistance.png", "Press Resistance"),
+            ("outputs/09_patterns_barca.png", "Tactical Patterns (Barcelona)"),
+            ("outputs/09_patterns_madrid.png", "Tactical Patterns (Real Madrid)"),
+            ("outputs/10_match_dashboard.png", "Full Match Dashboard"),
         ]
         
         for img_path, caption in image_files:
@@ -666,7 +916,7 @@ class MatchReport:
         doc.add_paragraph("")
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = footer.add_run("Generated by SpaceAI FC - Tactical Analysis Engine v1")
+        run = footer.add_run("Generated by SpaceAI FC - Tactical Analysis Engine v2")
         run.font.size = Pt(9)
         run.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
         run.italic = True
@@ -676,7 +926,9 @@ class MatchReport:
         print(f"Saved: {filepath}")
 
 
+# ═══════════════════════════════════════════════════════════════
 # Quick test - Full El Clásico analysis
+# ═══════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     
@@ -684,6 +936,11 @@ if __name__ == "__main__":
     sys.path.insert(0, '.')
     from engine.analysis.pass_network import PassNetwork
     from engine.analysis.space_control import SpaceControl
+    from engine.analysis.formation_detection import FormationDetector
+    from engine.analysis.role_classifier import RoleClassifier
+    from engine.analysis.press_resistance import PressResistance
+    from engine.analysis.pattern_detection import PatternDetector
+    import random
     
     barca_players = [
         {'name': 'ter Stegen',  'number': 1,  'x': 5,  'y': 40, 'position': 'GK'},
@@ -742,23 +999,55 @@ if __name__ == "__main__":
     sc.set_teams(barca_players, madrid_players)
     sc.set_ball(60, 40)
     
+    # Phase 2 modules
+    fd_b = FormationDetector()
+    fd_b.set_team(barca_players, "FC Barcelona", "#a50044")
+    fd_m = FormationDetector()
+    fd_m.set_team(madrid_players, "Real Madrid", "#ffffff")
+    
+    rc_b = RoleClassifier()
+    rc_b.set_team(barca_players, "FC Barcelona", "#a50044")
+    rc_m = RoleClassifier()
+    rc_m.set_team(madrid_players, "Real Madrid", "#ffffff")
+    
+    random.seed(42)
+    events = []
+    outfield = [p for p in barca_players if p['position'] != 'GK']
+    for _ in range(65):
+        passer = random.choice(outfield)
+        receiver = random.choice(outfield)
+        px = max(0, min(120, passer['x'] + random.gauss(0, 3)))
+        py = max(0, min(80, passer['y'] + random.gauss(0, 3)))
+        opp_pos = np.array([[p['x'], p['y']] for p in madrid_players])
+        dist = np.linalg.norm(opp_pos - np.array([px, py]), axis=1)
+        nearby = np.sum(dist < 10)
+        success = random.random() < (0.55 if nearby >= 2 else 0.90)
+        events.append({'passer': passer['number'], 'receiver': receiver['number'],
+                       'success': success, 'x': px, 'y': py,
+                       'end_x': receiver['x'], 'end_y': receiver['y']})
+    
+    pr = PressResistance()
+    pr.set_teams(barca_players, madrid_players,
+                 "FC Barcelona", "#a50044", "Real Madrid")
+    pr.add_pass_events(events)
+    
+    ptd = PatternDetector()
+    ptd.set_teams(barca_players, madrid_players,
+                  "FC Barcelona", "Real Madrid", "#a50044", "#ffffff")
+    
     mr = MatchReport()
-    
-    mr.set_match_info(
-        home_team="FC Barcelona",
-        away_team="Real Madrid",
-        score_home=2,
-        score_away=1,
-        minute=72,
-        competition="La Liga",
-        date="2026-03-22"
-    )
-    
+    mr.set_match_info(home_team="FC Barcelona", away_team="Real Madrid",
+                       score_home=2, score_away=1, minute=72,
+                       competition="La Liga", date="2026-03-22")
     mr.set_team_a("FC Barcelona", "#a50044", barca_players)
     mr.set_team_b("Real Madrid", "#ffffff", madrid_players)
     mr.set_ball(60, 40)
     mr.set_pass_network(pn)
     mr.set_space_control(sc)
+    mr.set_formation_detector(fd_b, fd_m)
+    mr.set_role_classifier(rc_b, rc_m)
+    mr.set_press_resistance(pr)
+    mr.set_pattern_detector(ptd)
     
     mr.print_report()
     
