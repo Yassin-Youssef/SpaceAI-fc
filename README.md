@@ -2,7 +2,7 @@
 
 **Agentic Tactical Intelligence System for Football**
 
-An AI-powered football analysis engine that understands player positioning, analyzes space control and passing dynamics, detects formations and tactical patterns, classifies player roles, and generates strategic insights. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
+An AI-powered football analysis engine that understands player positioning, analyzes space control and passing dynamics, detects formations and tactical patterns, classifies player roles, reasons about tactics, recommends strategies, and explains decisions in natural language. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
 
 ---
 
@@ -18,7 +18,11 @@ SpaceAI FC takes match data (player positions, pass events) and produces:
 - **Player role classification** (false nine, inverted winger, box-to-box, etc.)
 - **Press resistance analysis** measuring how well a team handles pressing
 - **Tactical pattern detection** (overlaps, compact blocks, wide overloads, high lines, low blocks)
-- **Automated match reports** with tactical insights, recommendations, and Word document export
+- **Tactical knowledge graph** encoding football knowledge as queryable relationships
+- **SWOT tactical reasoning** identifying strengths, weaknesses, opportunities, and threats
+- **Strategy recommendations** with prioritized tactical adjustments
+- **Natural language explanations** reading like a professional analyst's report
+- **Automated match reports** with Word document export
 
 ---
 
@@ -58,8 +62,14 @@ Input (positions, passes, stats)
    Tactical Analysis
    (space control, pass networks, press resistance)
         ↓
-   Match Report
-   (insights, recommendations, visualizations)
+   Tactical Intelligence
+   (knowledge graph, reasoning, SWOT analysis)
+        ↓
+   Strategy Agent
+   (recommendations, prioritized adjustments)
+        ↓
+   Explanation Layer
+   (natural language tactical analysis)
         ↓
    Output
    (dashboards, reports, Word documents, images)
@@ -80,7 +90,11 @@ spaceai-fc/
 │   │   ├── press_resistance.py      # Press resistance analysis
 │   │   ├── pattern_detection.py     # Tactical pattern detection
 │   │   └── match_report.py          # Combined report & dashboard generator
-│   ├── intelligence/                # Phase 3: tactical reasoning (coming soon)
+│   ├── intelligence/
+│   │   ├── knowledge_graph.py       # Football tactical knowledge graph
+│   │   ├── tactical_reasoning.py    # SWOT-based tactical reasoning engine
+│   │   ├── strategy_recommender.py  # Prioritized strategy recommendations
+│   │   └── explanation_layer.py     # Natural language explanation generator
 │   ├── perception/                  # Future: video-based perception
 │   └── visualization/
 │       └── pitch.py                 # Football pitch model & player plotting
@@ -190,6 +204,34 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - Confidence scores and involved player identification
 - Visual overlays highlighting detected patterns on pitch
 
+### Phase 3 — Tactical Intelligence
+
+#### Football Knowledge Graph (`engine/intelligence/knowledge_graph.py`)
+- NetworkX-based graph encoding tactical knowledge
+- Node types: Formations, Situations, Strategies, Weaknesses
+- 30+ edges covering tactical relationships
+- Query methods: counter-strategies, formation weaknesses/strengths, exploitation strategies
+- Color-coded knowledge graph visualization
+
+#### Tactical Reasoning Engine (`engine/intelligence/tactical_reasoning.py`)
+- SWOT-based analysis (Strengths, Weaknesses, Opportunities, Threats)
+- 15+ rule-based reasoning rules
+- Integrates results from all Phase 1 and 2 modules
+- Queries the knowledge graph for counter-strategies
+- Detects tactical situations and maps them to responses
+
+#### Strategy Recommender (`engine/intelligence/strategy_recommender.py`)
+- Prioritized recommendations (High / Medium / Low)
+- Categories: formation changes, pressing adjustments, attacking strategies, defensive adjustments, player instructions
+- Each recommendation includes reasoning and expected impact
+- Connects pass network data to player-specific instructions
+
+#### Explanation Layer (`engine/intelligence/explanation_layer.py`)
+- **Template mode**: generates professional tactical analysis using string templates (no API needed)
+- **LLM mode** (optional): uses Anthropic API (Claude) for richer natural language explanations
+- Produces multi-paragraph analysis covering: what's happening, why it matters, what should change
+- Falls back to template mode if no API key is available
+
 ---
 
 ## 🗺️ Roadmap
@@ -207,13 +249,13 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - [x] Press resistance analysis
 - [x] Tactical pattern detection (overlaps, compact blocks, overloads, high line, low block)
 
-### Phase 3 — Tactical Intelligence (Next)
-- [ ] Football knowledge graph
-- [ ] Rule-based tactical reasoning
-- [ ] Strategy recommendation system
-- [ ] LLM explanation layer
+### Phase 3 — Tactical Intelligence ✅
+- [x] Football knowledge graph (30+ tactical relationships)
+- [x] Rule-based tactical reasoning (SWOT analysis)
+- [x] Strategy recommendation system (prioritized adjustments)
+- [x] Explanation layer (template mode + optional LLM mode)
 
-### Phase 4 — Advanced AI
+### Phase 4 — Advanced AI (Next)
 - [ ] Video-based player tracking
 - [ ] Reinforcement learning coach
 - [ ] Multi-agent simulation
@@ -227,12 +269,13 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 | Python | Core language |
 | NumPy | Numerical computing |
 | Pandas | Data processing |
-| NetworkX | Graph-based pass analysis |
+| NetworkX | Graph-based pass analysis + knowledge graph |
 | SciPy | Voronoi tessellation, spatial analysis |
 | scikit-learn | Formation clustering |
 | matplotlib | Visualization engine |
 | mplsoccer | Football-specific pitch rendering |
 | python-docx | Word document report export |
+| Anthropic API | Optional LLM-powered explanations |
 
 ---
 
