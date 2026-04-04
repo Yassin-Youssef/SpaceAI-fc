@@ -51,6 +51,11 @@ class MatchReport:
         self.role_classifier_b = None
         self.press_resistance = None
         self.pattern_detector = None
+        
+        # Phase 3 modules
+        self.reasoning_results = None
+        self.strategy_recommendations = None
+        self.explanation_text = None
     
     # ── Setup ───────────────────────────────────────────────────
     
@@ -106,6 +111,20 @@ class MatchReport:
     def set_pattern_detector(self, pattern_detector):
         """Attach a PatternDetector object."""
         self.pattern_detector = pattern_detector
+    
+    # Phase 3 setters
+    
+    def set_reasoning_results(self, swot_results):
+        """Attach SWOT analysis results from TacticalReasoner."""
+        self.reasoning_results = swot_results
+    
+    def set_recommendations(self, recommendations):
+        """Attach strategy recommendations list."""
+        self.strategy_recommendations = recommendations
+    
+    def set_explanation(self, explanation_text):
+        """Attach generated explanation text."""
+        self.explanation_text = explanation_text
     
     # ── Formation Detection ─────────────────────────────────────
     
@@ -431,6 +450,27 @@ class MatchReport:
         for i, rec in enumerate(report['recommendations'], 1):
             print(f"  {i}. {rec}")
         
+        # Phase 3 sections
+        if self.reasoning_results:
+            swot = self.reasoning_results
+            print(f"\n  --- SWOT ANALYSIS ---")
+            for cat in ['strengths', 'weaknesses', 'opportunities', 'threats']:
+                items = swot.get(cat, [])
+                if items:
+                    print(f"  {cat.upper()}:")
+                    for item in items[:3]:
+                        print(f"    • {item['description']}")
+        
+        if self.strategy_recommendations:
+            print(f"\n  --- STRATEGY RECOMMENDATIONS ---")
+            for r in self.strategy_recommendations[:5]:
+                print(f"  [{r['priority'].upper():6s}] {r['category']}: {r['description']}")
+        
+        if self.explanation_text:
+            print(f"\n  --- TACTICAL EXPLANATION ---")
+            for line in self.explanation_text.split('\n\n')[:2]:
+                print(f"  {line[:120]}..." if len(line) > 120 else f"  {line}")
+        
         print("\n+" + "=" * 60 + "+")
         print("|" + " " * 18 + "End of Report" + " " * 29 + "|")
         print("+" + "=" * 60 + "+\n")
@@ -654,15 +694,42 @@ class MatchReport:
         
         y -= line_height * 0.3
         
-        # Recommendations
-        ax.text(0.5, y, "RECOMMENDATIONS", va='top', fontsize=9,
-                fontweight='bold', color='#2ecc71')
-        y -= line_height
-        
-        for rec in report['recommendations'][:3]:
-            display = rec[:55] + "..." if len(rec) > 55 else rec
-            ax.text(0.5, y, "• " + display, va='top', fontsize=7, color='white')
+        # SWOT Summary (Phase 3)
+        if self.reasoning_results:
+            swot = self.reasoning_results
+            ax.text(0.5, y, "SWOT SUMMARY", va='top', fontsize=9,
+                    fontweight='bold', color='#f1c40f')
             y -= line_height
+            for cat, color in [('strengths', '#2ecc71'), ('weaknesses', '#e74c3c'),
+                               ('opportunities', '#3498db'), ('threats', '#f39c12')]:
+                items = swot.get(cat, [])
+                if items:
+                    desc = items[0]['description']
+                    display = desc[:52] + "..." if len(desc) > 52 else desc
+                    ax.text(0.5, y, f"{cat[0].upper()}: {display}", va='top',
+                            fontsize=7, color=color)
+                    y -= line_height
+            y -= line_height * 0.3
+        
+        # Recommendations
+        if self.strategy_recommendations:
+            ax.text(0.5, y, "TOP RECOMMENDATIONS", va='top', fontsize=9,
+                    fontweight='bold', color='#2ecc71')
+            y -= line_height
+            for rec in self.strategy_recommendations[:3]:
+                pri = rec['priority'].upper()
+                desc = rec['description']
+                display = desc[:50] + "..." if len(desc) > 50 else desc
+                ax.text(0.5, y, f"[{pri}] {display}", va='top', fontsize=7, color='white')
+                y -= line_height
+        else:
+            ax.text(0.5, y, "RECOMMENDATIONS", va='top', fontsize=9,
+                    fontweight='bold', color='#2ecc71')
+            y -= line_height
+            for rec in report['recommendations'][:3]:
+                display = rec[:55] + "..." if len(rec) > 55 else rec
+                ax.text(0.5, y, "• " + display, va='top', fontsize=7, color='white')
+                y -= line_height
     
     # ── Save ────────────────────────────────────────────────────
     
@@ -866,6 +933,61 @@ class MatchReport:
                             style='List Bullet'
                         )
         
+        # ── Phase 3: SWOT Analysis ──────────────────────────────
+        if self.reasoning_results:
+            swot = self.reasoning_results
+            h = doc.add_heading("SWOT Analysis", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            for cat, label in [('strengths', 'Strengths'), ('weaknesses', 'Weaknesses'),
+                               ('opportunities', 'Opportunities'), ('threats', 'Threats')]:
+                items = swot.get(cat, [])
+                if items:
+                    h2 = doc.add_heading(label, level=2)
+                    h2.runs[0].font.color.rgb = RGBColor(0x29, 0x80, 0xB9)
+                    for item in items:
+                        doc.add_paragraph(
+                            f"{item['description']} (confidence: {item['confidence']:.0%})",
+                            style='List Bullet'
+                        )
+                        if item.get('action'):
+                            p = doc.add_paragraph()
+                            run = p.add_run(f"  → Action: {item['action']}")
+                            run.italic = True
+                            run.font.size = Pt(10)
+                            run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
+        
+        # ── Phase 3: Strategy Recommendations ────────────────────
+        if self.strategy_recommendations:
+            h = doc.add_heading("Strategy Recommendations", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            for rec in self.strategy_recommendations:
+                p = doc.add_paragraph()
+                run = p.add_run(f"[{rec['priority'].upper()}] {rec['category']}: ")
+                run.bold = True
+                p.add_run(rec['description'])
+                
+                reasoning_p = doc.add_paragraph()
+                run = reasoning_p.add_run(f"Reasoning: {rec['reasoning']}")
+                run.italic = True
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
+                
+                impact_p = doc.add_paragraph()
+                run = impact_p.add_run(f"Expected Impact: {rec['expected_impact']}")
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+        
+        # ── Phase 3: Tactical Explanation ────────────────────────
+        if self.explanation_text:
+            h = doc.add_heading("Tactical Analysis", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            
+            for paragraph in self.explanation_text.split('\n\n'):
+                if paragraph.strip():
+                    doc.add_paragraph(paragraph.strip())
+        
         # Visualizations
         h = doc.add_heading("Visualizations", level=1)
         h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
@@ -883,7 +1005,10 @@ class MatchReport:
             ("outputs/08_press_resistance.png", "Press Resistance"),
             ("outputs/09_patterns_barca.png", "Tactical Patterns (Barcelona)"),
             ("outputs/09_patterns_madrid.png", "Tactical Patterns (Real Madrid)"),
-            ("outputs/10_match_dashboard.png", "Full Match Dashboard"),
+            ("outputs/10_knowledge_graph.png", "Tactical Knowledge Graph"),
+            ("outputs/11_swot_analysis.png", "SWOT Analysis"),
+            ("outputs/12_recommendations.png", "Strategy Recommendations"),
+            ("outputs/14_match_dashboard.png", "Full Match Dashboard"),
         ]
         
         for img_path, caption in image_files:
@@ -916,7 +1041,7 @@ class MatchReport:
         doc.add_paragraph("")
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = footer.add_run("Generated by SpaceAI FC - Tactical Analysis Engine v2")
+        run = footer.add_run("Generated by SpaceAI FC - Tactical Intelligence Engine v3")
         run.font.size = Pt(9)
         run.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
         run.italic = True

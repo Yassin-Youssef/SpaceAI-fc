@@ -7,3 +7,4 @@ mplsoccer
 statsbombpy
 python-docx
 scikit-learn
+anthropic
