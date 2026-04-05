@@ -1,3 +1,4 @@
+# SpaceAI FC - Core Dependencies
 numpy
 pandas
 matplotlib
@@ -8,3 +9,8 @@ statsbombpy
 python-docx
 scikit-learn
 anthropic
+
+# Phase 4 — Advanced AI (optional)
+# pip install ultralytics opencv-python yt-dlp  # Video analysis
+# pip install gymnasium stable-baselines3       # RL coach
+# pip install pygame                            # Simulation visualization (alternative)

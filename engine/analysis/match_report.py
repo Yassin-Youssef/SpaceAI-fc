@@ -56,6 +56,11 @@ class MatchReport:
         self.reasoning_results = None
         self.strategy_recommendations = None
         self.explanation_text = None
+        
+        # Phase 4 modules
+        self.video_analysis_data = None
+        self.rl_recommendations_data = None
+        self.simulation_results_data = None
     
     # ── Setup ───────────────────────────────────────────────────
     
@@ -125,6 +130,20 @@ class MatchReport:
     def set_explanation(self, explanation_text):
         """Attach generated explanation text."""
         self.explanation_text = explanation_text
+    
+    # Phase 4 setters
+    
+    def set_video_analysis(self, video_data):
+        """Attach video analysis summary data."""
+        self.video_analysis_data = video_data
+    
+    def set_rl_recommendations(self, rl_data):
+        """Attach RL coach recommendations."""
+        self.rl_recommendations_data = rl_data
+    
+    def set_simulation_results(self, sim_data):
+        """Attach multi-agent simulation results."""
+        self.simulation_results_data = sim_data
     
     # ── Formation Detection ─────────────────────────────────────
     
@@ -470,6 +489,28 @@ class MatchReport:
             print(f"\n  --- TACTICAL EXPLANATION ---")
             for line in self.explanation_text.split('\n\n')[:2]:
                 print(f"  {line[:120]}..." if len(line) > 120 else f"  {line}")
+        
+        # Phase 4 sections
+        if self.video_analysis_data:
+            vd = self.video_analysis_data
+            print(f"\n  --- VIDEO ANALYSIS (Phase 4) ---")
+            print(f"  Source: {vd.get('source', 'N/A')}")
+            print(f"  Frames analyzed: {vd.get('n_frames', 0)}")
+            print(f"  Avg {vd.get('team_a_name', 'Team A')} detected: {vd.get('avg_team_a_detected', 0)}")
+            print(f"  Avg {vd.get('team_b_name', 'Team B')} detected: {vd.get('avg_team_b_detected', 0)}")
+        
+        if self.rl_recommendations_data:
+            rl = self.rl_recommendations_data
+            print(f"\n  --- RL COACH RECOMMENDATIONS (Phase 4) ---")
+            for rec in rl.get('recommendations', [])[:5]:
+                print(f"  {rec['scenario']}: → {rec['action']}")
+        
+        if self.simulation_results_data:
+            sd = self.simulation_results_data
+            print(f"\n  --- SIMULATION RESULTS (Phase 4) ---")
+            print(f"  {sd.get('tactic_a', '?')} vs {sd.get('tactic_b', '?')}")
+            print(f"  Score: {sd.get('goals_a', 0)} - {sd.get('goals_b', 0)}")
+            print(f"  Possession: {sd.get('possession_a', 0)}% - {sd.get('possession_b', 0)}%")
         
         print("\n+" + "=" * 60 + "+")
         print("|" + " " * 18 + "End of Report" + " " * 29 + "|")
@@ -988,6 +1029,50 @@ class MatchReport:
                 if paragraph.strip():
                     doc.add_paragraph(paragraph.strip())
         
+        # ── Phase 4: Video Analysis ─────────────────────────────
+        if self.video_analysis_data:
+            vd = self.video_analysis_data
+            h = doc.add_heading("Video Tactical Analysis", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            doc.add_paragraph(f"Source: {vd.get('source', 'N/A')}")
+            doc.add_paragraph(f"Frames Analyzed: {vd.get('n_frames', 0)}")
+            doc.add_paragraph(
+                f"Avg {vd.get('team_a_name', 'Team A')} detected per frame: "
+                f"{vd.get('avg_team_a_detected', 0)}"
+            )
+            doc.add_paragraph(
+                f"Avg {vd.get('team_b_name', 'Team B')} detected per frame: "
+                f"{vd.get('avg_team_b_detected', 0)}"
+            )
+        
+        # ── Phase 4: RL Coach ───────────────────────────────────
+        if self.rl_recommendations_data:
+            rl = self.rl_recommendations_data
+            h = doc.add_heading("RL Coach Recommendations", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            for rec in rl.get('recommendations', []):
+                doc.add_paragraph(
+                    f"{rec['scenario']}: {rec['action']}",
+                    style='List Bullet'
+                )
+        
+        # ── Phase 4: Simulation ─────────────────────────────────
+        if self.simulation_results_data:
+            sd = self.simulation_results_data
+            h = doc.add_heading("Tactical Simulation Results", level=1)
+            h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
+            doc.add_paragraph(
+                f"Scenario: {sd.get('tactic_a', '?')} vs {sd.get('tactic_b', '?')}"
+            )
+            doc.add_paragraph(f"Score: {sd.get('goals_a', 0)} - {sd.get('goals_b', 0)}")
+            doc.add_paragraph(
+                f"Possession: {sd.get('possession_a', 0)}% - {sd.get('possession_b', 0)}%"
+            )
+            doc.add_paragraph(
+                f"Territorial Control: {sd.get('territorial_control_a', 0)}% - "
+                f"{sd.get('territorial_control_b', 0)}%"
+            )
+        
         # Visualizations
         h = doc.add_heading("Visualizations", level=1)
         h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
@@ -1009,6 +1094,13 @@ class MatchReport:
             ("outputs/11_swot_analysis.png", "SWOT Analysis"),
             ("outputs/12_recommendations.png", "Strategy Recommendations"),
             ("outputs/14_match_dashboard.png", "Full Match Dashboard"),
+            # Phase 4
+            ("outputs/16_video_frame.png", "Video Analysis Frame"),
+            ("outputs/16_player_tracking.png", "Player Tracking Analysis"),
+            ("outputs/17_rl_training_curve.png", "RL Training Progress"),
+            ("outputs/17_rl_decisions.png", "RL Decision Analysis"),
+            ("outputs/18_simulation_frame.png", "Simulation Frame"),
+            ("outputs/18_simulation_comparison.png", "Tactical Comparison"),
         ]
         
         for img_path, caption in image_files:
@@ -1041,7 +1133,7 @@ class MatchReport:
         doc.add_paragraph("")
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = footer.add_run("Generated by SpaceAI FC - Tactical Intelligence Engine v3")
+        run = footer.add_run("Generated by SpaceAI FC - Tactical Intelligence Engine v4")
         run.font.size = Pt(9)
         run.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
         run.italic = True

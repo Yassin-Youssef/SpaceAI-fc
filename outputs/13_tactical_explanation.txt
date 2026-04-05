@@ -3,7 +3,7 @@ SPACEAI FC - TACTICAL ANALYSIS
 
 In this La Liga fixture between FC Barcelona and Real Madrid, the scoreline reads 2-1 at the 72th minute. FC Barcelona are deployed in a 4-2-3-1 formation while Real Madrid operate in a 4-3-3. FC Barcelona have completed 70 passes, with Cubarsí acting as the primary distributor through the centre of the pitch. Territorial control is relatively balanced (46.6% vs 53.4%).
 
-The key tactical situations identified are: an ultra-defensive posture, parking the bus, and a high defensive line, pushing play into the opponent's half. FC Barcelona are showing excellent press resistance with a score of 78/100, comfortably playing through the opponent's pressing structure.
+The key tactical situations identified are: a high defensive line, pushing play into the opponent's half, and an ultra-defensive posture, parking the bus. FC Barcelona are showing excellent press resistance with a score of 78/100, comfortably playing through the opponent's pressing structure.
 
 FC Barcelona's key strengths include strong press resistance (score: 78/100) and 4-2-3-1 excels in possession play. However, there are concerns: low presence in attacking third (0.0%). An opportunity exists as real madrid playing high line — space behind to exploit, which can be exploited. The main threats to be aware of are: fc barcelona playing a high line — vulnerable to counter-attacks and real madrid in compact shape — hard to play through.
 

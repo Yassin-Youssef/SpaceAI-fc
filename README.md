@@ -2,13 +2,13 @@
 
 **Agentic Tactical Intelligence System for Football**
 
-An AI-powered football analysis engine that understands player positioning, analyzes space control and passing dynamics, detects formations and tactical patterns, classifies player roles, reasons about tactics, recommends strategies, and explains decisions in natural language. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
+An AI-powered football analysis engine that watches matches, understands tactical structure, reasons about strengths and weaknesses, recommends strategies, explains decisions in natural language, tracks players from video, learns optimal tactics through reinforcement learning, and simulates tactical scenarios. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
 
 ---
 
 ## 🎯 What It Does
 
-SpaceAI FC takes match data (player positions, pass events) and produces:
+SpaceAI FC takes match data (player positions, pass events, video clips) and produces:
 
 - **Pitch visualization** with player positions and team separation
 - **Pass network analysis** identifying key distributors and strongest connections
@@ -22,6 +22,9 @@ SpaceAI FC takes match data (player positions, pass events) and produces:
 - **SWOT tactical reasoning** identifying strengths, weaknesses, opportunities, and threats
 - **Strategy recommendations** with prioritized tactical adjustments
 - **Natural language explanations** reading like a professional analyst's report
+- **Video-based player tracking** extracting positions from match footage
+- **Reinforcement learning coach** that learns optimal tactical decisions
+- **Multi-agent simulation** testing tactical scenarios before applying them
 - **Automated match reports** with Word document export
 
 ---
@@ -44,42 +47,31 @@ SpaceAI FC takes match data (player positions, pass events) and produces:
 ![Influence](outputs/05_space_influence.png)
 
 ### Full Match Dashboard
-![Dashboard](outputs/06_match_dashboard.png)
+![Dashboard](outputs/14_match_dashboard.png)
 
 ---
 
 ## 🏗️ System Architecture
-
-```
-Input (positions, passes, stats)
-        ↓
-   Perception
-   (player positions, coordinate mapping)
-        ↓
-   Detection
-   (formations, player roles, tactical patterns)
-        ↓
-   Tactical Analysis
-   (space control, pass networks, press resistance)
-        ↓
-   Tactical Intelligence
-   (knowledge graph, reasoning, SWOT analysis)
-        ↓
-   Strategy Agent
-   (recommendations, prioritized adjustments)
-        ↓
-   Explanation Layer
-   (natural language tactical analysis)
-        ↓
-   Output
-   (dashboards, reports, Word documents, images)
-```
+Input (positions, passes, stats, video)
+↓
+Phase 1 — Foundation (Sense)
+(pitch model, pass networks, space control)
+↓
+Phase 2 — Detection (Understand)
+(formations, player roles, press resistance, tactical patterns)
+↓
+Phase 3 — Tactical Intelligence (Reason → Act → Explain)
+(knowledge graph, SWOT reasoning, recommendations, explanations)
+↓
+Phase 4 — Advanced AI (Perceive + Learn + Simulate)
+(video tracking, RL coach, multi-agent simulation)
+↓
+Output
+(dashboards, reports, Word documents, animations, images)
 
 ---
 
 ## 📁 Project Structure
-
-```
 spaceai-fc/
 ├── engine/
 │   ├── analysis/
@@ -94,16 +86,18 @@ spaceai-fc/
 │   │   ├── knowledge_graph.py       # Football tactical knowledge graph
 │   │   ├── tactical_reasoning.py    # SWOT-based tactical reasoning engine
 │   │   ├── strategy_recommender.py  # Prioritized strategy recommendations
-│   │   └── explanation_layer.py     # Natural language explanation generator
-│   ├── perception/                  # Future: video-based perception
+│   │   ├── explanation_layer.py     # Natural language explanation generator
+│   │   ├── rl_coach.py             # Reinforcement learning tactical coach
+│   │   └── simulation.py           # Multi-agent tactical simulation
+│   ├── perception/
+│   │   └── video_analyzer.py        # Video-based player tracking & detection
 │   └── visualization/
 │       └── pitch.py                 # Football pitch model & player plotting
-├── outputs/                         # Generated images, reports, and documents
+├── outputs/                         # Generated images, reports, animations, documents
 ├── tests/                           # Unit tests
-├── main.py                          # Full demo - runs entire pipeline
+├── main.py                          # Full demo - runs entire 4-phase pipeline
 ├── requirements.txt                 # Python dependencies
 └── README.md
-```
 
 ---
 
@@ -122,23 +116,29 @@ source venv/bin/activate        # Mac/Linux
 .\venv\Scripts\Activate         # Windows
 ```
 
-### 3. Install dependencies
+### 3. Install core dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the demo
+### 4. Install Phase 4 dependencies (optional)
+```bash
+pip install ultralytics opencv-python yt-dlp    # Video analysis
+pip install gymnasium stable-baselines3          # RL coach
+```
+
+### 5. Run the demo
 ```bash
 python main.py
 ```
 
-This runs the full El Clásico analysis and saves all outputs to the `outputs/` folder.
+This runs the full El Clásico analysis across all 4 phases and saves all outputs to the `outputs/` folder.
 
 ---
 
 ## 🔧 Engine Modules
 
-### Phase 1 — Foundation
+### Phase 1 — Foundation (Sense)
 
 #### Pitch Model (`engine/visualization/pitch.py`)
 - 2D football pitch rendering using mplsoccer
@@ -168,9 +168,9 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - Tactical recommendations
 - 4-panel visual dashboard
 - Formatted text report
-- Word document export (.docx)
+- Word document export (.docx) with phase-separated sections
 
-### Phase 2 — Detection
+### Phase 2 — Detection (Understand)
 
 #### Formation Detection (`engine/analysis/formation_detection.py`)
 - Clustering-based formation detection (scikit-learn)
@@ -204,7 +204,7 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - Confidence scores and involved player identification
 - Visual overlays highlighting detected patterns on pitch
 
-### Phase 3 — Tactical Intelligence
+### Phase 3 — Tactical Intelligence (Reason → Act → Explain)
 
 #### Football Knowledge Graph (`engine/intelligence/knowledge_graph.py`)
 - NetworkX-based graph encoding tactical knowledge
@@ -232,6 +232,33 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - Produces multi-paragraph analysis covering: what's happening, why it matters, what should change
 - Falls back to template mode if no API key is available
 
+### Phase 4 — Advanced AI (Perceive + Learn + Simulate)
+
+#### Video Analyzer (`engine/perception/video_analyzer.py`)
+- YOLOv8 person detection on video frames
+- Player tracking across frames maintaining identity
+- Homography transformation (camera view → pitch coordinates)
+- Team separation via jersey color detection (HSV)
+- Individual player tracking: movement trajectory, heatmap, distance covered, speed
+- Synthetic demo mode for testing without real video files
+- Output in same format as rest of engine for seamless integration
+
+#### RL Coach (`engine/intelligence/rl_coach.py`)
+- Custom Gymnasium environment simulating match tactical decisions
+- State space: formation, space control, press resistance, score, minute, possession
+- Action space: 9 tactical decisions (press higher, drop deeper, exploit width, etc.)
+- PPO training with Stable-Baselines3 (configurable timesteps)
+- Evaluation showing decision patterns, win rates, and scenario-specific preferences
+- Save/load trained models
+
+#### Multi-Agent Simulation (`engine/intelligence/simulation.py`)
+- 5v5 simplified tactical simulation on 2D pitch
+- Rule-based agent behaviors: attackers, midfielders, defenders, goalkeeper
+- Tactical presets: high press vs low block, wide play vs narrow play, counter-attack vs possession
+- Comparison mode running multiple simulations and comparing outcomes
+- Animated visualization (GIF export)
+- Statistics: goals, possession, territorial control
+
 ---
 
 ## 🗺️ Roadmap
@@ -255,10 +282,16 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 - [x] Strategy recommendation system (prioritized adjustments)
 - [x] Explanation layer (template mode + optional LLM mode)
 
-### Phase 4 — Advanced AI (Next)
-- [ ] Video-based player tracking
-- [ ] Reinforcement learning coach
-- [ ] Multi-agent simulation
+### Phase 4 — Advanced AI ✅
+- [x] Video-based player tracking (YOLOv8 + synthetic demo)
+- [x] Reinforcement learning coach (PPO)
+- [x] Multi-agent simulation (5v5 tactical testing)
+
+### Next — Product Stage
+- [ ] FastAPI backend (API endpoints)
+- [ ] Frontend app (React or Streamlit)
+- [ ] Supabase backend integration
+- [ ] Vercel deployment
 
 ---
 
@@ -267,15 +300,16 @@ This runs the full El Clásico analysis and saves all outputs to the `outputs/` 
 | Tool | Purpose |
 |------|---------|
 | Python | Core language |
-| NumPy | Numerical computing |
-| Pandas | Data processing |
-| NetworkX | Graph-based pass analysis + knowledge graph |
+| NumPy / Pandas | Numerical computing & data processing |
+| NetworkX | Pass analysis + knowledge graph |
 | SciPy | Voronoi tessellation, spatial analysis |
 | scikit-learn | Formation clustering |
-| matplotlib | Visualization engine |
-| mplsoccer | Football-specific pitch rendering |
-| python-docx | Word document report export |
-| Anthropic API | Optional LLM-powered explanations |
+| matplotlib / mplsoccer | Visualization & pitch rendering |
+| python-docx | Word document export |
+| YOLOv8 (Ultralytics) | Player detection from video |
+| OpenCV | Video processing |
+| Gymnasium + Stable-Baselines3 | Reinforcement learning |
+| Anthropic API | Optional LLM explanations |
 
 ---
 
