@@ -29,6 +29,31 @@ pytest tests/test_filename.py -v
 export ANTHROPIC_API_KEY=your_key_here
 ```
 
+**Start the Streamlit frontend** (Step 2 — requires API running first):
+```bash
+streamlit run app/streamlit_app.py --server.port 8501
+# Open: http://localhost:8501
+```
+
+**Start the API server** (Step 1 product layer):
+```bash
+uvicorn api.main:app --reload --port 8000
+# Swagger UI: http://localhost:8000/docs
+```
+
+**Test all API endpoints** (server must be running):
+```bash
+python test_api.py
+python test_api.py --skip-slow          # skip the full pipeline test
+python test_api.py --endpoint formation # single endpoint
+```
+
+**Install Phase 4 optional dependencies** (video analysis and RL coach):
+```bash
+pip install ultralytics opencv-python yt-dlp   # video analysis
+pip install gymnasium stable-baselines3         # RL coach
+```
+
 ## Architecture
 
 SpaceAI FC is a three-phase agentic tactical intelligence system modeled on a robotics cognitive pipeline: **Sense → Understand → Reason → Act → Explain**.
@@ -73,4 +98,45 @@ All generated artifacts (PNGs, Word docs) go to the `outputs/` directory. The `d
 - Modules are independent and stateless — each takes data as input and returns results. They don't import each other.
 - `main.py` acts as the orchestrator, threading results from one module into the next.
 - The `explanation_layer.py` degrades gracefully: full LLM report with API key, template-based report without.
-- Phase 4 is planned (video tracking, RL coach, multi-agent simulation) — `engine/perception/` and `api/` directories are stubs for this.
+- Phase 4 is implemented but all three modules are **optional** — `main.py` skips them gracefully if their dependencies are missing. The `api/` directory is currently empty.
+
+### Phase 4 — Advanced AI (`engine/perception/` + `engine/intelligence/`)
+
+- **`video_analyzer.py`** — Extracts player positions from video via YOLOv8 + homography to pitch coordinates. Falls back to synthetic demo data if `ultralytics`/`opencv-python`/`yt-dlp` are absent.
+- **`rl_coach.py`** — Custom Gymnasium environment (`FootballTacticsEnv`) with a PPO agent (Stable-Baselines3) that learns 9 tactical decisions (press higher, drop deeper, etc.) from simulated match states.
+- **`simulation.py`** — Rule-based 5v5/7v7 multi-agent pitch simulation; compares tactical presets and exports animated GIFs. Requires only matplotlib (already in core deps).
+
+### API Layer (`api/`)
+
+FastAPI backend wrapping all engine phases as HTTP endpoints.
+
+- **`api/main.py`** — App entry point, CORS, rate limiting (slowapi), all routers registered.
+- **`api/config.py`** — All settings and env vars (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, file size limits, CORS origins).
+- **`api/models/`** — Pydantic request/response models. Every analysis endpoint accepts `input_type: "manual" | "video" | "dataset"`.
+- **`api/services/engine_service.py`** — Stateless functions wrapping each engine module. Returns dicts + base64 image strings.
+- **`api/services/llm_service.py`** — LLM calls: OpenRouter first, then Anthropic, then knowledge-graph template fallback.
+- **`api/services/video_service.py`** — Video processing; synthetic demo data fallback if Phase 4 deps absent.
+- **`api/routers/`** — One router file per feature group.
+- **`api/utils/image_encoder.py`** — `fig_to_base64(fig)` converts matplotlib figures to base64 PNG for responses.
+- **`api/utils/file_handler.py`** — Upload validation, temp file save/cleanup, CSV/JSON dataset parsing.
+- **`temp/`** — Temporary upload storage, cleaned up after each request.
+
+### Frontend Layer (`app/`)
+
+Streamlit MVP — football-themed UI calling the FastAPI backend.
+
+- **`app/streamlit_app.py`** — Entry point. Sets page config, injects CSS, renders sidebar, routes to page module.
+- **`app/demo_data.py`** — El Clásico pre-built data (BARCA_PLAYERS, MADRID_PLAYERS, DEMO_PASSES, etc.) used by every page's "Load Demo Data" button.
+- **`app/components/theme.py`** — `FOOTBALL_CSS` string + helpers (`inject_css`, `page_header`, `section_title`, `insight_item`). All custom CSS lives here.
+- **`app/components/sidebar.py`** — Navigation radio + API status indicator.
+- **`app/components/input_forms.py`** — Reusable widgets: `player_table`, `pass_events_input`, `match_info_form`, `team_meta`, `demo_button`, `analyze_button`, `video_input_tab`, `dataset_input_tab`.
+- **`app/components/results_display.py`** — Reusable result renderers: `show_visualizations`, `metric_row`, `show_swot`, `show_recommendations`, `show_patterns`, `show_explanation`, `download_image_button`.
+- **`app/utils/api_client.py`** — `requests`-based calls to every FastAPI endpoint; `base64_to_image()` converts API images to PIL for `st.image()`.
+- **`app/pages/`** — One file per feature (7 pages in Batch 1). Each page manages its own `st.session_state` keys so results survive navigation.
+
+All matplotlib figures are generated with `matplotlib.use('Agg')` (no display server needed).
+
+### Tests
+
+`tests/` currently contains only `__init__.py` — no test files exist yet.
+`test_api.py` at the project root tests all API endpoints against a running server.

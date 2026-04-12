@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(venv/Scripts/python -c ':*)",
+      "Bash(venv/Scripts/pip show:*)",
+      "Bash(venv/Scripts/python -m py_compile app/demo_data.py app/utils/api_client.py app/components/theme.py app/components/sidebar.py app/components/input_forms.py app/components/results_display.py app/pages/pass_network.py app/pages/space_control.py app/pages/formation.py app/pages/press_resistance.py app/pages/patterns.py app/pages/recommendations.py app/pages/full_analysis.py app/streamlit_app.py)",
+      "Bash(python -c ':*)"
+    ]
+  }
+}

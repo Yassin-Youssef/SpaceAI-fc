@@ -1,4 +1,18 @@
 # SpaceAI FC - Core Dependencies
+# API layer (Step 1)
+fastapi
+uvicorn[standard]
+python-multipart
+slowapi
+aiofiles
+httpx
+
+# Frontend (Step 2)
+streamlit
+requests
+Pillow
+
+
 numpy
 pandas
 matplotlib

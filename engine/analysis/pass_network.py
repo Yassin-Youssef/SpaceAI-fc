@@ -223,8 +223,8 @@ class PassNetwork:
         if not strong_edges:
             strong_edges = [(u, v, d) for u, v, d in self.graph.edges(data=True)]
         
-        max_weight = max((d['weight'] for _, _, d in strong_edges), default=1)
-        max_involvement = max((c['total_involvement'] for c in counts.values()), default=1)
+        max_weight = max((d['weight'] for _, _, d in strong_edges), default=1) or 1
+        max_involvement = max((c['total_involvement'] for c in counts.values()), default=1) or 1
         
         # Draw edges as curved arrows
         for passer, receiver, data in strong_edges:
