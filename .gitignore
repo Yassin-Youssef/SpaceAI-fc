@@ -1,7 +1,54 @@
+# Virtual environments
 venv/
+.venv/
+env/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend_extract/node_modules/
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+frontend_extract/dist/
+*.egg-info/
+
+# Environment files (SECRETS)
+.env
+.env.local
+.env.production
+*.env
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# OS files
 .DS_Store
 Thumbs.db
-*.egg-info/
-.env
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Temp files
+temp/
+tmp/
+*.tmp
+
+# ML models (large files)
+*.zip
+rl_coach_model.zip
+yolov8n.pt
+
+# Git
+*.orig
+
+# OneDrive
+~$*

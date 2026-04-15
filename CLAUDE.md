@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-**Install dependencies:**
+**Install Python dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
@@ -17,28 +17,32 @@ python main.py
 **Run tests:**
 ```bash
 pytest tests/
-```
-
-**Run a single test file:**
-```bash
 pytest tests/test_filename.py -v
 ```
 
 **Set up LLM-powered explanations** (optional — falls back to templates without it):
 ```bash
 export ANTHROPIC_API_KEY=your_key_here
+export OPENROUTER_API_KEY=your_key_here   # preferred; falls back to Anthropic
 ```
 
-**Start the Streamlit frontend** (Step 2 — requires API running first):
-```bash
-streamlit run app/streamlit_app.py --server.port 8501
-# Open: http://localhost:8501
-```
-
-**Start the API server** (Step 1 product layer):
+**Start the API server** (required first for both frontends):
 ```bash
 uvicorn api.main:app --reload --port 8000
 # Swagger UI: http://localhost:8000/docs
+```
+
+**Start the React frontend** (`frontend/` — primary production UI):
+```bash
+cd frontend
+npm install     # or: pnpm install
+npm run dev     # http://localhost:5173
+```
+
+**Start the Streamlit frontend** (`app/` — MVP/fallback UI):
+```bash
+streamlit run app/streamlit_app.py --server.port 8501
+# http://localhost:8501
 ```
 
 **Test all API endpoints** (server must be running):
@@ -56,87 +60,86 @@ pip install gymnasium stable-baselines3         # RL coach
 
 ## Architecture
 
-SpaceAI FC is a three-phase agentic tactical intelligence system modeled on a robotics cognitive pipeline: **Sense → Understand → Reason → Act → Explain**.
+SpaceAI FC is a tactical intelligence system modeled on a robotics cognitive pipeline: **Sense → Understand → Reason → Act → Explain**.
 
 ### Data Flow
 
 `main.py` defines a match fixture (player positions + pass events as dicts) and runs a 15-step pipeline, passing intermediate results between modules. There is no persistent database — data lives in Python dicts/dataframes in memory during a run.
 
+The API layer exposes all engine phases as HTTP endpoints. Both frontends call the API; they share no code.
+
 ### Phase 1 — Perception (`engine/analysis/`)
 
-- **`pass_network.py`** — Builds a directed NetworkX graph of passes; computes degree/betweenness/eigenvector centrality; outputs key distributors and network visualizations.
-- **`space_control.py`** — Dual spatial analysis: Voronoi tessellation and Gaussian influence decay. Returns zone-by-zone control percentages for each team.
-- **`pitch.py`** (`engine/visualization/`) — mplsoccer pitch rendering used by all modules for visualizing player positions, heatmaps, and networks.
+- **`pass_network.py`** — Builds a directed NetworkX graph of passes; computes degree/betweenness/eigenvector centrality.
+- **`space_control.py`** — Dual spatial analysis: Voronoi tessellation and Gaussian influence decay. Returns zone-by-zone control percentages.
+- **`pitch.py`** (`engine/visualization/`) — mplsoccer pitch rendering used by all modules.
 
 ### Phase 2 — Understanding (`engine/analysis/`)
 
-- **`formation_detection.py`** — K-Means/Agglomerative clustering on player x-coordinates; outputs formation strings like `"4-3-3"`. Handles left/right team orientation.
-- **`role_classifier.py`** — Rule-based classifier for tactical roles beyond position (false nine, inverted winger, box-to-box, overlapping fullback, etc.); returns role + confidence score per player.
-- **`press_resistance.py`** — Scores 0–100 press resistance; measures pass success under pressure; flags vulnerable zones.
-- **`pattern_detection.py`** — Detects overlapping runs, compact blocks, wide overloads, high/low lines; returns patterns with confidence scores.
+- **`formation_detection.py`** — K-Means/Agglomerative clustering on player x-coordinates; outputs formation strings like `"4-3-3"`.
+- **`role_classifier.py`** — Rule-based classifier for tactical sub-roles (false nine, inverted winger, box-to-box, etc.); returns role + confidence per player.
+- **`press_resistance.py`** — Scores 0–100 press resistance; flags vulnerable zones.
+- **`pattern_detection.py`** — Detects overlapping runs, compact blocks, wide overloads, high/low lines.
 
 ### Phase 3 — Intelligence (`engine/intelligence/`)
 
-- **`knowledge_graph.py`** — 30+ node NetworkX graph encoding formations, tactical situations (low block, high press, counter-attack), strategies, and their relationships. The core domain knowledge store.
-- **`tactical_reasoning.py`** — SWOT engine (15+ rules) that ingests all Phase 1/2 outputs and queries the knowledge graph to produce structured strengths/weaknesses/opportunities/threats.
-- **`strategy_recommender.py`** — Converts SWOT output into prioritized recommendations (High/Medium/Low) across five categories: formation changes, pressing adjustments, attacking strategies, defensive adjustments, player instructions.
-- **`explanation_layer.py`** — Produces natural language reports. Uses template strings by default; switches to Claude API (Anthropic) if `ANTHROPIC_API_KEY` is set.
-
-### Reporting (`engine/analysis/match_report.py`)
-
-Integrator class that combines all module outputs into:
-- A 4-panel matplotlib dashboard
-- Formatted text report
-- Word document export via `python-docx`
-
-### Output
-
-All generated artifacts (PNGs, Word docs) go to the `outputs/` directory. The `data/raw/` and `data/processed/` directories hold match input data.
-
-### Key Design Patterns
-
-- Modules are independent and stateless — each takes data as input and returns results. They don't import each other.
-- `main.py` acts as the orchestrator, threading results from one module into the next.
-- The `explanation_layer.py` degrades gracefully: full LLM report with API key, template-based report without.
-- Phase 4 is implemented but all three modules are **optional** — `main.py` skips them gracefully if their dependencies are missing. The `api/` directory is currently empty.
+- **`knowledge_graph.py`** — 30+ node NetworkX graph encoding formations, tactical situations, strategies, and their relationships. Core domain knowledge store.
+- **`tactical_reasoning.py`** — SWOT engine (15+ rules) querying the knowledge graph from Phase 1/2 outputs.
+- **`strategy_recommender.py`** — Converts SWOT output into prioritized recommendations (High/Medium/Low) across five categories.
+- **`explanation_layer.py`** — Natural language reports. Template-based by default; uses Claude API if `ANTHROPIC_API_KEY` is set.
 
 ### Phase 4 — Advanced AI (`engine/perception/` + `engine/intelligence/`)
 
-- **`video_analyzer.py`** — Extracts player positions from video via YOLOv8 + homography to pitch coordinates. Falls back to synthetic demo data if `ultralytics`/`opencv-python`/`yt-dlp` are absent.
-- **`rl_coach.py`** — Custom Gymnasium environment (`FootballTacticsEnv`) with a PPO agent (Stable-Baselines3) that learns 9 tactical decisions (press higher, drop deeper, etc.) from simulated match states.
-- **`simulation.py`** — Rule-based 5v5/7v7 multi-agent pitch simulation; compares tactical presets and exports animated GIFs. Requires only matplotlib (already in core deps).
+All three modules are optional — `main.py` skips them gracefully if their dependencies are missing.
+
+- **`video_analyzer.py`** — Extracts player positions from video via YOLOv8 + homography. Falls back to synthetic demo data if dependencies are absent.
+- **`rl_coach.py`** — Custom Gymnasium environment with PPO agent (Stable-Baselines3) learning 9 tactical decisions.
+- **`simulation.py`** — Rule-based 5v5/7v7 multi-agent pitch simulation; exports animated GIFs.
 
 ### API Layer (`api/`)
 
-FastAPI backend wrapping all engine phases as HTTP endpoints.
+FastAPI backend with 14 routers covering every engine phase.
 
-- **`api/main.py`** — App entry point, CORS, rate limiting (slowapi), all routers registered.
-- **`api/config.py`** — All settings and env vars (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, file size limits, CORS origins).
+- **`api/main.py`** — App entry point, CORS, rate limiting (slowapi, `10/minute`), all routers registered.
+- **`api/config.py`** — All settings and env vars (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, file size limits, CORS origins). Pitch coordinates are `x: 0–120`, `y: 0–80`.
 - **`api/models/`** — Pydantic request/response models. Every analysis endpoint accepts `input_type: "manual" | "video" | "dataset"`.
-- **`api/services/engine_service.py`** — Stateless functions wrapping each engine module. Returns dicts + base64 image strings.
-- **`api/services/llm_service.py`** — LLM calls: OpenRouter first, then Anthropic, then knowledge-graph template fallback.
-- **`api/services/video_service.py`** — Video processing; synthetic demo data fallback if Phase 4 deps absent.
-- **`api/routers/`** — One router file per feature group.
-- **`api/utils/image_encoder.py`** — `fig_to_base64(fig)` converts matplotlib figures to base64 PNG for responses.
-- **`api/utils/file_handler.py`** — Upload validation, temp file save/cleanup, CSV/JSON dataset parsing.
-- **`temp/`** — Temporary upload storage, cleaned up after each request.
+- **`api/services/engine_service.py`** — Stateless wrappers for each engine module; returns dicts + base64 image strings.
+- **`api/services/llm_service.py`** — LLM calls: OpenRouter first → Anthropic → knowledge-graph template fallback.
+- **`api/routers/`** — One file per feature: `analysis`, `pass_network`, `space_control`, `formation`, `roles`, `press_resistance`, `patterns`, `intelligence`, `explanation`, `video`, `simulation`, `ask`, `export`, `player_assessment`.
+- **`api/utils/image_encoder.py`** — `fig_to_base64(fig)` converts matplotlib figures to base64 PNG.
+- **`api/utils/file_handler.py`** — Upload validation, temp file save/cleanup, CSV/JSON parsing.
 
-### Frontend Layer (`app/`)
+### React Frontend (`frontend/`)
 
-Streamlit MVP — football-themed UI calling the FastAPI backend.
+Primary production UI — React 18 + TypeScript + Vite + Tailwind CSS v4 + shadcn/Radix UI. Authentication via Supabase.
 
-- **`app/streamlit_app.py`** — Entry point. Sets page config, injects CSS, renders sidebar, routes to page module.
-- **`app/demo_data.py`** — El Clásico pre-built data (BARCA_PLAYERS, MADRID_PLAYERS, DEMO_PASSES, etc.) used by every page's "Load Demo Data" button.
-- **`app/components/theme.py`** — `FOOTBALL_CSS` string + helpers (`inject_css`, `page_header`, `section_title`, `insight_item`). All custom CSS lives here.
-- **`app/components/sidebar.py`** — Navigation radio + API status indicator.
-- **`app/components/input_forms.py`** — Reusable widgets: `player_table`, `pass_events_input`, `match_info_form`, `team_meta`, `demo_button`, `analyze_button`, `video_input_tab`, `dataset_input_tab`.
-- **`app/components/results_display.py`** — Reusable result renderers: `show_visualizations`, `metric_row`, `show_swot`, `show_recommendations`, `show_patterns`, `show_explanation`, `download_image_button`.
-- **`app/utils/api_client.py`** — `requests`-based calls to every FastAPI endpoint; `base64_to_image()` converts API images to PIL for `st.image()`.
-- **`app/pages/`** — One file per feature (7 pages in Batch 1). Each page manages its own `st.session_state` keys so results survive navigation.
+- **`frontend/src/main.tsx`** — Entry point, mounts `App.tsx`.
+- **`frontend/src/app/App.tsx`** — Router and layout shell using react-router v7.
+- **`frontend/src/app/components/`** — Page-level components: `Home`, `Auth`, `AskSpaceAI`, `ChatInterface`, `Compare`, `Explanation`, `FeaturePageInput/Results`, `Formation`, `History`, `MatchStats`, `PlayerAssessment`, `Sidebar/AppSidebar`, `Simulation`, `Strategy`, `TacticalPitch`.
+- **`frontend/src/imports/`** — shadcn/ui primitives and shared UI utilities.
 
-All matplotlib figures are generated with `matplotlib.use('Agg')` (no display server needed).
+### Streamlit Frontend (`app/`)
+
+MVP/fallback UI calling the same FastAPI backend.
+
+- **`app/streamlit_app.py`** — Entry point; sets page config, injects CSS, routes to view modules.
+- **`app/demo_data.py`** — El Clásico pre-built data used by every view's "Load Demo Data" button.
+- **`app/views/`** — One file per feature (mirrors API routers): `formation.py`, `pass_network.py`, `space_control.py`, `patterns.py`, `press_resistance.py`, `roles.py`, `player_assessment.py`, `recommendations.py`, `explanation.py`, `simulation.py`, `compare.py`, `full_analysis.py`, `ask_spaceai.py`.
+- **`app/components/`** — `theme.py` (all CSS), `sidebar.py`, `input_forms.py`, `results_display.py`.
+- **`app/utils/api_client.py`** — `requests`-based calls to every API endpoint; `base64_to_image()` for PIL rendering.
+
+### Key Design Patterns
+
+- Engine modules are stateless — each takes data as input and returns results; they don't import each other.
+- `main.py` is the orchestrator, threading results from one module into the next.
+- All matplotlib figures use `matplotlib.use('Agg')` — no display server required.
+- LLM fallback chain: OpenRouter → Anthropic → template strings. No LLM key required to run.
+
+### Reporting (`engine/analysis/match_report.py`)
+
+Integrator producing a 4-panel matplotlib dashboard, formatted text report, and Word document export via `python-docx`. All artifacts go to `outputs/`.
 
 ### Tests
 
-`tests/` currently contains only `__init__.py` — no test files exist yet.
+`tests/` contains only `__init__.py` — no unit tests yet.
 `test_api.py` at the project root tests all API endpoints against a running server.
