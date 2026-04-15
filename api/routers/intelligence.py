@@ -14,6 +14,7 @@ from api.models.responses import (
 )
 from api.services import engine_service
 from api.utils.file_handler import parse_dataset
+from api.utils.resolve import resolve_input
 from pathlib import Path
 
 router = APIRouter(tags=["Intelligence"])
@@ -45,7 +46,7 @@ async def knowledge_graph(req: KnowledgeGraphRequest):
 @router.post("/api/reasoning", response_model=IntelligenceResponse)
 async def reasoning(req: ReasoningRequest):
     try:
-        team_a, team_b, passes = _resolve_input(req)
+        team_a, team_b, passes = resolve_input(req)
 
         # Build analysis_data from available data
         analysis_data = _build_analysis_data(req, team_a, team_b, passes)
@@ -109,15 +110,6 @@ async def recommendations(req: RecommendationsRequest):
 
 
 # ── Helpers ───────────────────────────────────────────────────────
-
-def _resolve_input(req: ReasoningRequest):
-    if req.input_type == "dataset" and req.dataset_file:
-        data = parse_dataset(Path(req.dataset_file))
-        return data.get("team_a", []), data.get("team_b", []), data.get("passes", [])
-    team_a = [p.model_dump() for p in req.team_a] if req.team_a else []
-    team_b = [p.model_dump() for p in req.team_b] if req.team_b else []
-    passes = [p.model_dump() for p in req.passes] if req.passes else []
-    return team_a, team_b, passes
 
 
 def _build_analysis_data(req: ReasoningRequest, team_a, team_b, passes) -> dict:

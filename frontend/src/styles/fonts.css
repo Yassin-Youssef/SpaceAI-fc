@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+/* UCL Broadcast Style Typography */
+:root {
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Rajdhani', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}

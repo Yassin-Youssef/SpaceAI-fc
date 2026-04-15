@@ -2,7 +2,9 @@
 
 **Agentic Tactical Intelligence System for Football**
 
-An AI-powered football analysis engine **and full-stack web application** that watches matches, understands tactical structure, reasons about strengths and weaknesses, recommends strategies, and explains decisions in natural language. The 4-phase engine is wrapped in a **FastAPI** backend and served through a **Streamlit** frontend with **12 interactive features**, **3 input methods** (manual entry, video upload, dataset upload), and **LLM-powered insights** via OpenRouter. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
+![SpaceAI FC Production Dashboard](outputs/00_react_dashboard_ui.png)
+
+An AI-powered football analysis engine **and full-stack production web application** that watches matches, understands tactical structure, reasons about strengths and weaknesses, recommends strategies, and explains decisions in natural language. The 4-phase engine is wrapped in a **FastAPI** backend and served through a **React + Tailwind** frontend with **12 interactive features**, **3 input methods** (manual entry, video upload, dataset upload), and **LLM-powered insights** via OpenRouter. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
 
 ---
 
@@ -31,7 +33,7 @@ SpaceAI FC takes match data (player positions, pass events, video clips) and pro
 
 ### Web App Features
 
-The Streamlit frontend exposes **12 interactive features** — each with manual entry, video upload, and dataset upload support:
+The React frontend exposes **12 interactive features** — each with manual entry, video upload, and dataset upload support:
 
 | # | Feature | Description |
 |---|---------|-------------|
@@ -86,7 +88,7 @@ The Streamlit frontend exposes **12 interactive features** — each with manual 
 Input (positions, passes, stats, video, datasets)
  ↓
 ┌──────────────────────────────────────────────────┐
-│  Streamlit Frontend (port 8501)                  │
+│  React Production Frontend (Vite)                │
 │  12 features · 3 input methods · LLM chat        │
 └──────────────────┬───────────────────────────────┘
                    ↓ HTTP / JSON
@@ -270,10 +272,12 @@ Runs the full El Clásico analysis across all 4 phases and saves outputs to `out
 # Terminal 1 — start the API backend
 uvicorn api.main:app --reload --port 8000
 
-# Terminal 2 — start the Streamlit frontend
-streamlit run app/streamlit_app.py --server.port 8501
+# Terminal 2 — start the React frontend
+cd frontend
+npm install
+npm run dev
 ```
-Open **http://localhost:8501** in your browser.
+Open **http://localhost:5173** in your browser.
 
 ---
 
@@ -455,7 +459,7 @@ Open **http://localhost:8501** in your browser.
 
 - [x] FastAPI backend (22 endpoints, rate limiting, CORS, validation)
 - [x] Streamlit MVP (12 features, 3 input methods, LLM integration)
-- [ ] Production frontend (React + Tailwind + Supabase)
+- [x] Production frontend (React + Tailwind + Supabase + Custom Form Layouts)
 - [ ] Deployment (Vercel / cloud hosting)
 
 ---
@@ -473,7 +477,7 @@ Open **http://localhost:8501** in your browser.
 | python-docx | Word document export |
 | **FastAPI** | **REST API backend** |
 | **Uvicorn** | **ASGI server** |
-| **Streamlit** | **Interactive frontend** |
+| **React + Vite** | **Production interactive frontend** |
 | **OpenRouter API** | **LLM-powered insights (Claude)** |
 | slowapi | API rate limiting |
 | httpx / requests | HTTP clients |

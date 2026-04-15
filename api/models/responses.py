@@ -105,6 +105,16 @@ class RolesResponse(BaseModel):
     visualizations: List[VisualizationData] = []
     error: Optional[str] = None
 
+class PlayerAssessmentResponse(BaseModel):
+    success: bool
+    recommended_role: str
+    radar_data: Dict[str, float]
+    scouting_report: str
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    visualizations: List[VisualizationData] = []
+    error: Optional[str] = None
+
 
 # ── Press resistance ─────────────────────────────────────────────
 

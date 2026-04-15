@@ -207,6 +207,39 @@ class AskRequest(BaseModel):
     team_name: str = "Team A"
     opponent_name: str = "Team B"
 
+# ── Player Assessment ─────────────────────────────────────────────
+
+class PlayerStats(BaseModel):
+    passes_completed: int = 0
+    passes_attempted: int = 0
+    tackles: int = 0
+    interceptions: int = 0
+    shots: int = 0
+    dribbles: int = 0
+    aerial_duels: int = 0
+    distance_covered: float = 0.0
+    sprints: int = 0
+
+class PlayerAssessmentRequest(BaseModel):
+    name: str = "Unknown"
+    number: int = 0
+    age: int = 25
+    preferred_foot: str = "Right"
+    height: str = "180cm"
+    weight: str = "75kg"
+    input_type: str = Field("manual", pattern="^(manual|data|video)$")
+    
+    # For video mode
+    video_file: Optional[str] = None
+    youtube_url: Optional[str] = None
+    player_track_id: Optional[int] = None
+    
+    # For data mode
+    stats: Optional[PlayerStats] = None
+    
+    # For manual mode fallback
+    manual_attributes: Optional[dict] = None
+
 
 # ── Export ───────────────────────────────────────────────────────
 

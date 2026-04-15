@@ -27,7 +27,7 @@ from api.config import (
 from api.routers import (
     analysis, pass_network, space_control, formation, roles,
     press_resistance, patterns, intelligence, explanation,
-    video, simulation, ask, export,
+    video, simulation, ask, export, player_assessment
 )
 
 # ── Rate limiter ─────────────────────────────────────────────────
@@ -68,6 +68,7 @@ app.include_router(video.router)
 app.include_router(simulation.router)
 app.include_router(ask.router)
 app.include_router(export.router)
+app.include_router(player_assessment.router)
 
 # ── Utility endpoints ─────────────────────────────────────────────
 
