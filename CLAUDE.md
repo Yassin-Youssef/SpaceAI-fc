@@ -30,6 +30,7 @@ export OPENROUTER_API_KEY=your_key_here   # preferred; falls back to Anthropic
 ```bash
 uvicorn api.main:app --reload --port 8000
 # Swagger UI: http://localhost:8000/docs
+# Feature list: http://localhost:8000/api/features
 ```
 
 **Start the React frontend** (`frontend/` — primary production UI):
@@ -56,6 +57,36 @@ python test_api.py --endpoint formation # single endpoint
 ```bash
 pip install ultralytics opencv-python yt-dlp   # video analysis
 pip install gymnasium stable-baselines3         # RL coach
+```
+
+## Frontend Environment Variables
+
+Create `frontend/.env.local` with:
+```
+VITE_API_URL=http://localhost:8000/api          # defaults to this if omitted
+VITE_SUPABASE_URL=https://xxx.supabase.co       # required for auth + saved analyses
+VITE_SUPABASE_ANON_KEY=eyJ...                   # required for auth + saved analyses
+VITE_OPENROUTER_API_KEY=sk-or-...               # optional: enables direct browser LLM calls
+```
+
+If `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are absent the app still runs but auth and history saving are disabled.
+
+**Supabase table required for history saving** (run in Supabase SQL editor):
+```sql
+create table public.analyses (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid references auth.users(id) on delete cascade,
+  match_name  text not null,
+  feature     text not null,
+  input_data  jsonb default '{}',
+  results     jsonb default '{}',
+  created_at  timestamptz default now()
+);
+alter table public.analyses enable row level security;
+create policy "Users manage own analyses"
+  on public.analyses for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 ```
 
 ## Architecture
@@ -94,29 +125,36 @@ All three modules are optional — `main.py` skips them gracefully if their depe
 
 - **`video_analyzer.py`** — Extracts player positions from video via YOLOv8 + homography. Falls back to synthetic demo data if dependencies are absent.
 - **`rl_coach.py`** — Custom Gymnasium environment with PPO agent (Stable-Baselines3) learning 9 tactical decisions.
-- **`simulation.py`** — Rule-based 5v5/7v7 multi-agent pitch simulation; exports animated GIFs.
+- **`simulation.py`** — Rule-based 5v5/7v7 multi-agent pitch simulation; exports animated GIFs. Valid tactics: `high_press`, `low_block`, `wide_play`, `narrow_play`, `counter_attack`, `possession`.
 
 ### API Layer (`api/`)
 
 FastAPI backend with 14 routers covering every engine phase.
 
 - **`api/main.py`** — App entry point, CORS, rate limiting (slowapi, `10/minute`), all routers registered.
-- **`api/config.py`** — All settings and env vars (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, file size limits, CORS origins). Pitch coordinates are `x: 0–120`, `y: 0–80`.
-- **`api/models/`** — Pydantic request/response models. Every analysis endpoint accepts `input_type: "manual" | "video" | "dataset"`.
+- **`api/config.py`** — All settings and env vars (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, file size limits, CORS origins). Pitch coordinates are `x: 0–120`, `y: 0–80`. CORS whitelists localhost:3000, 5173, 8501 only — update for production deployment.
+- **`api/models/requests.py`** — Pydantic request models. `BaseAnalysisRequest` is the shared base; every analysis endpoint accepts `input_type: "manual" | "video" | "dataset"`. Player coordinates validated against pitch bounds.
+- **`api/models/responses.py`** — Pydantic response models.
 - **`api/services/engine_service.py`** — Stateless wrappers for each engine module; returns dicts + base64 image strings.
 - **`api/services/llm_service.py`** — LLM calls: OpenRouter first → Anthropic → knowledge-graph template fallback.
-- **`api/routers/`** — One file per feature: `analysis`, `pass_network`, `space_control`, `formation`, `roles`, `press_resistance`, `patterns`, `intelligence`, `explanation`, `video`, `simulation`, `ask`, `export`, `player_assessment`.
+- **`api/services/video_service.py`** — Video upload processing and YouTube download; falls back to synthetic El Clásico data when Phase 4 dependencies are absent.
+- **`api/utils/resolve.py`** — `resolve_input()` bridges all three input types: parses CSV/JSON datasets, runs the Phase 4 CV pipeline for video inputs, or passes through manual player coordinates. Called at the top of every analysis router.
 - **`api/utils/image_encoder.py`** — `fig_to_base64(fig)` converts matplotlib figures to base64 PNG.
 - **`api/utils/file_handler.py`** — Upload validation, temp file save/cleanup, CSV/JSON parsing.
+- **`api/routers/`** — One file per feature: `analysis`, `pass_network`, `space_control`, `formation`, `roles`, `press_resistance`, `patterns`, `intelligence`, `explanation`, `video`, `simulation`, `ask`, `export`, `player_assessment`.
 
 ### React Frontend (`frontend/`)
 
-Primary production UI — React 18 + TypeScript + Vite + Tailwind CSS v4 + shadcn/Radix UI. Authentication via Supabase.
+Primary production UI — React 18 + TypeScript + Vite + Tailwind CSS v4 + shadcn/Radix UI + MUI. Authentication via Supabase.
 
 - **`frontend/src/main.tsx`** — Entry point, mounts `App.tsx`.
-- **`frontend/src/app/App.tsx`** — Router and layout shell using react-router v7.
-- **`frontend/src/app/components/`** — Page-level components: `Home`, `Auth`, `AskSpaceAI`, `ChatInterface`, `Compare`, `Explanation`, `FeaturePageInput/Results`, `Formation`, `History`, `MatchStats`, `PlayerAssessment`, `Sidebar/AppSidebar`, `Simulation`, `Strategy`, `TacticalPitch`.
-- **`frontend/src/imports/`** — shadcn/ui primitives and shared UI utilities.
+- **`frontend/src/app/App.tsx`** — State-machine router: a single `currentView` string (useState) drives which page component renders. React Router is installed but navigation is handled via state, not URL routing.
+- **`frontend/src/app/components/`** — Page-level components: `Home`, `Auth`, `AskSpaceAI`, `ChatInterface`, `Compare`, `Explanation`, `FeaturePageInput/Results`, `History`, `MatchStats`, `PlayerAssessment`, `AppSidebar`, `Simulation`, `Strategy`, `TacticalPitch`.
+- **`frontend/src/app/components/ui/`** — shadcn/ui primitives (accordion, dialog, button, etc.).
+- **`frontend/src/lib/api.ts`** — All backend calls. `analyzeFeature(featureId, formData)` maps feature IDs to endpoints; `FEATURE_ENDPOINTS` is the authoritative mapping. Video files are uploaded first via `uploadVideo()`, then injected as manual coordinates.
+- **`frontend/src/lib/llm.ts`** — Optional direct browser→OpenRouter calls (requires `VITE_OPENROUTER_API_KEY`). Returns `null` when unconfigured; callers fall back to the backend `/api/ask` endpoint.
+- **`frontend/src/lib/supabase.ts`** — Auth (signUp/signIn/signOut) and analyses CRUD. Degrades gracefully when env vars are absent.
+- **`frontend/src/lib/types.ts`** — Shared TypeScript types.
 
 ### Streamlit Frontend (`app/`)
 
@@ -124,7 +162,7 @@ MVP/fallback UI calling the same FastAPI backend.
 
 - **`app/streamlit_app.py`** — Entry point; sets page config, injects CSS, routes to view modules.
 - **`app/demo_data.py`** — El Clásico pre-built data used by every view's "Load Demo Data" button.
-- **`app/views/`** — One file per feature (mirrors API routers): `formation.py`, `pass_network.py`, `space_control.py`, `patterns.py`, `press_resistance.py`, `roles.py`, `player_assessment.py`, `recommendations.py`, `explanation.py`, `simulation.py`, `compare.py`, `full_analysis.py`, `ask_spaceai.py`.
+- **`app/views/`** — One file per feature (mirrors API routers).
 - **`app/components/`** — `theme.py` (all CSS), `sidebar.py`, `input_forms.py`, `results_display.py`.
 - **`app/utils/api_client.py`** — `requests`-based calls to every API endpoint; `base64_to_image()` for PIL rendering.
 
@@ -134,6 +172,7 @@ MVP/fallback UI calling the same FastAPI backend.
 - `main.py` is the orchestrator, threading results from one module into the next.
 - All matplotlib figures use `matplotlib.use('Agg')` — no display server required.
 - LLM fallback chain: OpenRouter → Anthropic → template strings. No LLM key required to run.
+- `resolve_input()` in `api/utils/resolve.py` is the single integration point between input types (manual/video/dataset) and the analysis engine — every router calls it to normalise inputs before passing to engine services.
 
 ### Reporting (`engine/analysis/match_report.py`)
 
