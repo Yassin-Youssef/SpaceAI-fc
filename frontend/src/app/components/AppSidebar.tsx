@@ -1,40 +1,19 @@
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  BarChart3,
-  Share2,
-  Map,
-  Shield,
-  Zap,
-  Grid3x3,
-  Lightbulb,
-  User,
-  MessageSquare,
-  FileText,
-  GitCompare,
-  Gamepad2,
-  Clock,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
+  LayoutDashboard, BarChart3, Share2, Map, Shield, Zap, Grid3x3, Lightbulb, User, MessageSquare, FileText,
+  GitCompare, Gamepad2, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Info, X, type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
-import type { UserProfile } from "../../lib/types";
+import { useEffect, useState } from "react";
+import type { UserProfile, HealthResponse } from "../../lib/types";
+import { cn } from "./ui/utils";
+import { springSoft, staggerContainer, staggerItem } from "../../lib/motion";
 
-interface NavItem {
-  id: string;
-  icon: any;
-  label: string;
-}
-
-interface NavSection {
-  title: string;
-  items: NavItem[];
-}
+interface NavItem { id: string; icon: LucideIcon; label: string }
+interface NavSection { title: string; items: NavItem[] }
 
 const navSections: NavSection[] = [
   {
-    title: "ANALYSIS",
+    title: "Analysis",
     items: [
       { id: "full-match", icon: BarChart3, label: "Full Match Analysis" },
       { id: "pass-network", icon: Share2, label: "Pass Network" },
@@ -45,7 +24,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "INTELLIGENCE",
+    title: "Intelligence",
     items: [
       { id: "strategy", icon: Lightbulb, label: "Strategy Recommendations" },
       { id: "ask-ai", icon: MessageSquare, label: "Ask SpaceAI" },
@@ -53,7 +32,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "ADVANCED",
+    title: "Advanced",
     items: [
       { id: "player-assessment", icon: User, label: "Player Assessment" },
       { id: "compare", icon: GitCompare, label: "Compare" },
@@ -62,214 +41,176 @@ const navSections: NavSection[] = [
   },
 ];
 
+const footerItems: NavItem[] = [
+  { id: "history", icon: Clock, label: "History" },
+  { id: "about", icon: Info, label: "About" },
+  { id: "settings", icon: Settings, label: "Settings" },
+];
+
 interface AppSidebarProps {
-  activeItem?: string;
-  onNavigate?: (id: string) => void;
-  collapsed?: boolean;
+  activeItem: string;
+  onNavigate: (id: string) => void;
   user?: UserProfile | null;
+  health?: HealthResponse | null;
+  healthError?: boolean;
+  /** Mobile: whether the drawer is open */
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
-export function AppSidebar({ activeItem = "home", onNavigate, collapsed: controlledCollapsed, user }: AppSidebarProps) {
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const collapsed = controlledCollapsed ?? internalCollapsed;
+export function AppSidebar({ activeItem, onNavigate, user, health, healthError, mobileOpen, onMobileClose }: AppSidebarProps) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("spaceai.sidebar") === "collapsed"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("spaceai.sidebar", collapsed ? "collapsed" : "open"); } catch { /* ignore */ }
+  }, [collapsed]);
 
-  return (
-    <motion.div
-      className="relative h-full flex flex-col"
-      animate={{ width: collapsed ? 80 : 280 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Glassmorphism Background */}
-      <div
-        className="absolute inset-0 backdrop-blur-2xl"
-        style={{
-          background: "linear-gradient(135deg, rgba(18, 24, 53, 0.95) 0%, rgba(10, 14, 39, 0.95) 100%)",
-          boxShadow: "inset 0 0 40px rgba(0, 217, 255, 0.05), 0 0 60px rgba(0, 0, 0, 0.3)",
-          borderRight: "1px solid rgba(0, 217, 255, 0.2)",
-        }}
-      >
-        {/* Star pattern watermark */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #00d9ff 1px, transparent 1px),
-                             radial-gradient(circle at 75% 75%, #00d9ff 1px, transparent 1px)`,
-            backgroundSize: "30px 30px",
-          }}
-        />
+  const go = (id: string) => { onNavigate(id); onMobileClose(); };
+
+  const content = (
+    <div className="relative z-10 flex h-full flex-col overflow-hidden">
+      {/* Logo */}
+      <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_30px_rgba(0,217,255,0.4)]">
+          <svg viewBox="0 0 64 64" className="h-6 w-6" aria-hidden><circle cx="32" cy="32" r="22" fill="none" stroke="#fff" strokeWidth="4" /><path d="M32 14l8 6-3 10H27l-3-10z" fill="#fff" /><circle cx="32" cy="32" r="4" fill="#fff" /></svg>
+        </div>
+        {!collapsed && (
+          <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="min-w-0">
+            <div className="truncate font-bold tracking-tight text-white">Space<span className="text-brand">AI</span> FC</div>
+            <div className="truncate text-[11px] text-text-muted">Tactical intelligence</div>
+          </motion.div>
+        )}
+        <button type="button" onClick={onMobileClose} className="ml-auto rounded-lg p-2 text-text-muted hover:bg-white/5 hover:text-white lg:hidden" aria-label="Close menu">
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-        {/* Logo Section */}
-        <div className="px-6 py-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(0,217,255,0.4)] shrink-0">
-              <div className="text-white font-bold text-xl">S</div>
+      {/* Nav */}
+      <motion.nav variants={staggerContainer(0.03, 0.05)} initial="hidden" animate="show" className="flex-1 space-y-3.5 overflow-y-auto px-3 py-3">
+        <motion.div variants={staggerItem}>
+          <NavButton item={{ id: "home", icon: LayoutDashboard, label: "Dashboard" }} active={activeItem === "home"} collapsed={collapsed} onClick={() => go("home")} />
+        </motion.div>
+
+        {navSections.map((section) => (
+          <div key={section.title}>
+            {!collapsed && <div className="eyebrow mb-1.5 px-3">{section.title}</div>}
+            {collapsed && <div className="mx-3 mb-2 h-px bg-white/10" />}
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <motion.div key={item.id} variants={staggerItem}>
+                  <NavButton item={item} active={activeItem === item.id} collapsed={collapsed} onClick={() => go(item.id)} />
+                </motion.div>
+              ))}
             </div>
-            {!collapsed && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="font-bold text-white tracking-tight">
-                  Space<span className="text-cyan-400">AI</span> FC
-                </div>
+          </div>
+        ))}
+
+        <div>
+          <div className="mx-3 mb-2 h-px bg-white/10" />
+          <div className="space-y-0.5">
+            {footerItems.map((item) => (
+              <motion.div key={item.id} variants={staggerItem}>
+                <NavButton item={item} active={activeItem === item.id} collapsed={collapsed} onClick={() => go(item.id)} />
               </motion.div>
-            )}
+            ))}
           </div>
         </div>
+      </motion.nav>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {/* Home */}
-          <div>
-            <button
-              onClick={() => onNavigate?.("home")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-                activeItem === "home"
-                  ? "bg-cyan-500/20 text-cyan-400"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {activeItem === "home" && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-400 rounded-r-full shadow-[0_0_10px_rgba(0,217,255,0.6)]"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <BarChart3 className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="text-sm font-medium">Dashboard</span>}
-            </button>
+      {/* Status + user */}
+      <div className="border-t border-white/10 px-3 py-2.5">
+        <div className={cn("mb-1.5 flex items-center gap-2 rounded-lg px-2 py-1 text-[11px]", collapsed && "justify-center")} title={healthError ? "Backend unreachable" : health ? `Backend v${health.version} · ${health.llm_provider}` : "Checking backend…"}>
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", healthError ? "bg-danger" : health ? "bg-success shadow-[0_0_8px_rgba(47,229,143,0.8)]" : "animate-pulse bg-warning")} />
+          {!collapsed && <span className="truncate text-text-muted">{healthError ? "Backend offline" : health ? `Engine online · ${health.llm_available ? "LLM" : "Knowledge graph"}` : "Connecting…"}</span>}
+        </div>
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-xs font-bold text-white">
+            {initials(user)}
           </div>
-
-          {/* Feature Sections */}
-          {navSections.map((section) => (
-            <div key={section.title}>
-              {!collapsed && (
-                <div className="px-3 mb-2">
-                  <div className="text-[10px] uppercase tracking-wider text-white/40 font-bold">{section.title}</div>
-                </div>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeItem === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => onNavigate?.(item.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-                        isActive
-                          ? "bg-cyan-500/20 text-cyan-400"
-                          : "text-white/70 hover:text-white hover:bg-white/5"
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-400 rounded-r-full shadow-[0_0_10px_rgba(0,217,255,0.6)]"
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                      <Icon className="w-5 h-5 shrink-0" />
-                      {!collapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
-
-                      {/* Tooltip for collapsed state */}
-                      {collapsed && (
-                        <div className="absolute left-full ml-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                          <div className="bg-black/90 backdrop-blur-sm px-3 py-2 rounded-lg text-sm font-medium text-white border border-cyan-500/30">
-                            {item.label}
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-white">{user?.full_name ?? user?.email ?? "Guest"}</div>
+                <div className="truncate text-[11px] text-text-muted">{user?.isGuest ? "Guest session" : user?.email ?? "Not signed in"}</div>
               </div>
-            </div>
-          ))}
-
-          {/* Divider */}
-          <div className="border-t border-white/10 my-4" />
-
-          {/* History & Settings */}
-          <div className="space-y-1">
-            <button
-              onClick={() => onNavigate?.("history")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-                activeItem === "history"
-                  ? "bg-cyan-500/20 text-cyan-400"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {activeItem === "history" && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-400 rounded-r-full shadow-[0_0_10px_rgba(0,217,255,0.6)]"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <Clock className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="text-sm font-medium">History</span>}
-            </button>
-
-            <button
-              onClick={() => onNavigate?.("settings")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-                activeItem === "settings"
-                  ? "bg-cyan-500/20 text-cyan-400"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {activeItem === "settings" && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-400 rounded-r-full shadow-[0_0_10px_rgba(0,217,255,0.6)]"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <Settings className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="text-sm font-medium">Settings</span>}
-            </button>
-          </div>
-        </nav>
-
-        {/* User Section */}
-        <div className="border-t border-white/10 p-4">
-          {!collapsed ? (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                <span className="text-sm font-bold text-white">
-                  {user?.full_name ? user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-white truncate">{user?.full_name ?? user?.email ?? "Guest"}</div>
-                <div className="text-xs text-white/50">{user?.email ? "Manager" : "Not signed in"}</div>
-              </div>
-              <button className="p-2 hover:bg-white/5 rounded-lg transition-colors" onClick={() => onNavigate?.("logout")}>
-                <LogOut className="w-4 h-4 text-white/50" />
+              <button type="button" onClick={() => go("logout")} className="rounded-lg p-2 text-text-muted transition-colors hover:bg-white/5 hover:text-white" aria-label={user?.isGuest ? "Exit guest session" : "Sign out"} title={user?.isGuest ? "Exit guest session" : "Sign out"}>
+                <LogOut className="h-4 w-4" />
               </button>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-sm font-bold text-white">
-                  {user?.full_name ? user.full_name[0].toUpperCase() : "?"}
-                </span>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setInternalCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center shadow-[0_0_20px_rgba(0,217,255,0.4)] hover:scale-110 transition-transform z-20"
-      >
-        {collapsed ? <ChevronRight className="w-3 h-3 text-white" /> : <ChevronLeft className="w-3 h-3 text-white" />}
-      </button>
-    </motion.div>
+    </div>
   );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <motion.aside
+        className="relative hidden h-full shrink-0 flex-col lg:flex"
+        animate={{ width: collapsed ? 84 : 272 }}
+        transition={springSoft}
+      >
+        <div className="absolute inset-0 border-r border-brand/20 bg-sidebar backdrop-blur-2xl" style={{ boxShadow: "inset 0 0 40px rgba(0, 217, 255, 0.04)" }} />
+        {content}
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="absolute -right-3 top-[72px] z-20 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-[#0a0e27] shadow-[0_0_16px_rgba(0,217,255,0.5)] transition-transform hover:scale-110"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
+      </motion.aside>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onMobileClose} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" />
+            <motion.aside
+              key="drawer"
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={springSoft}
+              className="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] flex-col bg-surface-1 shadow-2xl lg:hidden"
+            >
+              {content}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function NavButton({ item, active, collapsed, onClick }: { item: NavItem; active: boolean; collapsed: boolean; onClick: () => void }) {
+  const Icon = item.icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={collapsed ? item.label : undefined}
+      className={cn(
+        "group relative flex w-full items-center gap-3 rounded-lg px-3 py-[7px] text-sm font-medium transition-colors",
+        active ? "bg-brand/15 text-brand" : "text-text-secondary hover:bg-white/5 hover:text-white",
+        collapsed && "justify-center px-0"
+      )}
+    >
+      {active && (
+        <motion.span layoutId="nav-indicator" transition={springSoft} className="absolute bottom-1.5 left-0 top-1.5 w-1 rounded-r-full bg-brand shadow-[0_0_10px_rgba(0,217,255,0.7)]" />
+      )}
+      <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110", active && "drop-shadow-[0_0_6px_rgba(0,217,255,0.6)]")} />
+      {!collapsed && <span className="truncate">{item.label}</span>}
+    </button>
+  );
+}
+
+function initials(user?: UserProfile | null): string {
+  if (!user) return "?";
+  if (user.isGuest) return "G";
+  const src = user.full_name || user.email || "?";
+  return src.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("") || "?";
 }

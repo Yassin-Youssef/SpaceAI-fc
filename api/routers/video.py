@@ -38,7 +38,7 @@ async def upload_video(file: UploadFile = File(...)):
                 frames_processed=tracking["frames_processed"],
                 method=tracking["method"],
             ),
-            message=f"Processed {tracking['frames_processed']} frames via {tracking['method']}.",
+            message=tracking.get("message") or f"Processed {tracking['frames_processed']} frames via {tracking['method']}.",
         )
     except HTTPException:
         raise
@@ -65,8 +65,10 @@ async def youtube_video(req: YouTubeRequest):
                 frames_processed=tracking["frames_processed"],
                 method=tracking["method"],
             ),
-            message=f"Processed via {tracking['method']}.",
+            message=tracking.get("message") or f"Processed via {tracking['method']}.",
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 

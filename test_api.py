@@ -188,7 +188,12 @@ def test_intelligence(client, base):
 
     r3 = client.post(f"{base}/api/recommendations",
                      json={"team_name": "FC Barcelona", "opponent_name": "Real Madrid"}, timeout=30)
-    _print_result("/api/recommendations", r3, ["recommendations"])
+    _print_result("/api/recommendations (no data)", r3, ["recommendations"])
+
+    r4 = client.post(f"{base}/api/recommendations",
+                     json={**BASE_BODY, "situation": "low_block"}, timeout=90)
+    _print_result("/api/recommendations (from positions)", r4,
+                  ["formation_a", "situations", "recommendations", "knowledge_graph_insights"])
 
 
 def test_explanation(client, base):
@@ -204,6 +209,70 @@ def test_explanation(client, base):
     if r.status_code == 200:
         text = r.json().get("text", "")
         print(f"      text preview: {text[:200]}...")
+
+    r2 = client.post(f"{base}/api/explanation", json={**BASE_BODY, "mode": "llm"}, timeout=90)
+    _print_result("/api/explanation (from positions)", r2, ["mode", "summary"])
+
+
+def test_dataset(client, base):
+    _section("Dataset upload")
+    for fmt in ("csv", "json"):
+        t = client.get(f"{base}/api/dataset/template/{fmt}", timeout=30)
+        _print_result(f"/api/dataset/template/{fmt}", t)
+        if t.status_code != 200:
+            continue
+        files = {"file": (f"template.{fmt}", t.content,
+                          "text/csv" if fmt == "csv" else "application/json")}
+        r = client.post(f"{base}/api/dataset/upload", files=files, timeout=30)
+        _print_result(f"/api/dataset/upload ({fmt})", r, ["team_a", "team_b", "passes", "message"])
+
+    bad = {"file": ("bad.csv", b"foo,bar\n1,2\n", "text/csv")}
+    r = client.post(f"{base}/api/dataset/upload", files=bad, timeout=30)
+    print(f"  {'✓' if r.status_code == 400 else '✗'} [{r.status_code}] /api/dataset/upload (invalid CSV rejected)")
+
+
+def test_demo(client, base):
+    _section("Demo matches")
+    r = client.get(f"{base}/api/demo/matches", timeout=30)
+    _print_result("/api/demo/matches", r, ["total"])
+    pr = client.get(f"{base}/api/demo/players", timeout=30)
+    _print_result("/api/demo/players", pr, ["total"])
+    if pr.status_code == 200:
+        for dp in pr.json().get("players", [])[:3]:
+            a = client.post(f"{base}/api/player-assessment", json={
+                "name": dp["name"], "number": dp["number"], "age": dp["age"], "preferred_foot": dp["foot"],
+                "height": dp["height"], "weight": dp["weight"], "input_type": "data",
+                "stats": {k: v for k, v in dp["stats"].items() if k not in ("minutes", "carry_distance_m")},
+            }, timeout=60)
+            role = a.json().get("recommended_role") if a.status_code == 200 else None
+            print(f"  {'✓' if a.status_code == 200 else '✗'} [{a.status_code}] /api/player-assessment ← {dp['name']} → {role}")
+    if r.status_code == 200:
+        for m in r.json().get("matches", []):
+            d = client.get(f"{base}/api/demo/matches/{m['id']}", timeout=30)
+            ok = d.status_code == 200
+            body = d.json() if ok else {}
+            print(f"  {'✓' if ok else '✗'} [{d.status_code}] /api/demo/matches/{m['id']}  "
+                  f"{m['title']} ({m['source_kind']}, {len(body.get('passes', []))} passes)")
+            if ok:
+                # Every fixture must run through the full pipeline
+                a = client.post(f"{base}/api/analyze", json={
+                    "input_type": "manual", "team_a": body["players_a"], "team_b": body["players_b"],
+                    "passes": body["passes"], "team_a_name": body["team_a"]["name"],
+                    "team_b_name": body["team_b"]["name"], "match_info": body["match_info"],
+                }, timeout=180)
+                fm = (a.json().get("formation") or {}) if a.status_code == 200 else {}
+                print(f"      {'✓' if a.status_code == 200 else '✗'} /api/analyze → "
+                      f"{fm.get('team_a_formation')} vs {fm.get('team_b_formation')}")
+
+
+def test_export(client, base):
+    _section("Export")
+    body = {"analysis_data": {}, "team_name": "FC Barcelona", "opponent_name": "Real Madrid",
+            "team_a": BARCELONA, "team_b": REAL_MADRID, "passes": PASSES, "match_info": MATCH_INFO}
+    r = client.post(f"{base}/api/export/docx", json=body, timeout=120)
+    print(f"  {'✓' if r.status_code == 200 else '✗'} [{r.status_code}] /api/export/docx ({len(r.content)} bytes)")
+    r = client.post(f"{base}/api/export/pdf", json=body, timeout=120)
+    print(f"  {'✓' if r.status_code == 200 else '✗'} [{r.status_code}] /api/export/pdf ({len(r.content)} bytes)")
 
 
 def test_video(client, base):
@@ -270,7 +339,7 @@ def main():
     parser.add_argument("--endpoint", default="all",
                         help="Run a single endpoint test: health, pass_network, space_control, "
                              "formation, roles, press_resistance, patterns, intelligence, "
-                             "explanation, video, simulation, ask, full")
+                             "explanation, dataset, export, demo, video, simulation, ask, full")
     parser.add_argument("--skip-slow", action="store_true",
                         help="Skip full pipeline test (/api/analyze)")
     args = parser.parse_args()
@@ -304,6 +373,9 @@ def main():
         if run_all or ep == "patterns":     test_patterns(client, base)
         if run_all or ep == "intelligence": test_intelligence(client, base)
         if run_all or ep == "explanation":  test_explanation(client, base)
+        if run_all or ep == "dataset":      test_dataset(client, base)
+        if run_all or ep == "export":       test_export(client, base)
+        if run_all or ep == "demo":         test_demo(client, base)
         if run_all or ep == "video":        test_video(client, base)
         if run_all or ep == "simulation":   test_simulation(client, base)
         if run_all or ep == "ask":          test_ask(client, base)

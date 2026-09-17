@@ -1,0 +1,532 @@
+{
+ "id": "clasico-2025",
+ "title": "Barcelona 4-3 Real Madrid",
+ "subtitle": "La Liga · Estadi Olímpic Lluís Companys · 11 May 2025 · title decider",
+ "competition": "La Liga 2024/25",
+ "date": "2025-05-11",
+ "team_a": {
+  "name": "Barcelona",
+  "color": "#00d9ff",
+  "formation": "4-2-3-1"
+ },
+ "team_b": {
+  "name": "Real Madrid",
+  "color": "#ff5a6e",
+  "formation": "4-2-3-1"
+ },
+ "score": {
+  "a": 4,
+  "b": 3
+ },
+ "players_a": [
+  {
+   "name": "Szczęsny",
+   "number": 25,
+   "position": "GK",
+   "x": 5,
+   "y": 40
+  },
+  {
+   "name": "Eric García",
+   "number": 24,
+   "position": "RB",
+   "x": 30,
+   "y": 68
+  },
+  {
+   "name": "Cubarsí",
+   "number": 2,
+   "position": "CB",
+   "x": 26,
+   "y": 50
+  },
+  {
+   "name": "Iñigo Martínez",
+   "number": 5,
+   "position": "CB",
+   "x": 26,
+   "y": 30
+  },
+  {
+   "name": "Gerard Martín",
+   "number": 35,
+   "position": "LB",
+   "x": 30,
+   "y": 12
+  },
+  {
+   "name": "De Jong",
+   "number": 21,
+   "position": "CDM",
+   "x": 46,
+   "y": 46
+  },
+  {
+   "name": "Pedri",
+   "number": 8,
+   "position": "CM",
+   "x": 48,
+   "y": 32
+  },
+  {
+   "name": "Lamine Yamal",
+   "number": 19,
+   "position": "RW",
+   "x": 68,
+   "y": 68
+  },
+  {
+   "name": "Dani Olmo",
+   "number": 20,
+   "position": "CAM",
+   "x": 62,
+   "y": 40
+  },
+  {
+   "name": "Raphinha",
+   "number": 11,
+   "position": "LW",
+   "x": 68,
+   "y": 12
+  },
+  {
+   "name": "Ferran Torres",
+   "number": 7,
+   "position": "ST",
+   "x": 82,
+   "y": 40
+  }
+ ],
+ "players_b": [
+  {
+   "name": "Courtois",
+   "number": 1,
+   "position": "GK",
+   "x": 115,
+   "y": 40
+  },
+  {
+   "name": "Lucas Vázquez",
+   "number": 17,
+   "position": "RB",
+   "x": 92,
+   "y": 12
+  },
+  {
+   "name": "Asencio",
+   "number": 35,
+   "position": "CB",
+   "x": 95,
+   "y": 30
+  },
+  {
+   "name": "Tchouaméni",
+   "number": 14,
+   "position": "CB",
+   "x": 95,
+   "y": 50
+  },
+  {
+   "name": "Fran García",
+   "number": 20,
+   "position": "LB",
+   "x": 92,
+   "y": 68
+  },
+  {
+   "name": "Ceballos",
+   "number": 19,
+   "position": "CDM",
+   "x": 76,
+   "y": 34
+  },
+  {
+   "name": "Valverde",
+   "number": 8,
+   "position": "CM",
+   "x": 74,
+   "y": 50
+  },
+  {
+   "name": "Güler",
+   "number": 15,
+   "position": "RW",
+   "x": 58,
+   "y": 14
+  },
+  {
+   "name": "Bellingham",
+   "number": 5,
+   "position": "CAM",
+   "x": 60,
+   "y": 40
+  },
+  {
+   "name": "Vinícius",
+   "number": 7,
+   "position": "LW",
+   "x": 56,
+   "y": 66
+  },
+  {
+   "name": "Mbappé",
+   "number": 9,
+   "position": "ST",
+   "x": 44,
+   "y": 40
+  }
+ ],
+ "passes": [
+  {
+   "passer": 25,
+   "receiver": 2,
+   "success": true,
+   "x": 5,
+   "y": 40,
+   "end_x": 26,
+   "end_y": 50
+  },
+  {
+   "passer": 25,
+   "receiver": 5,
+   "success": true,
+   "x": 5,
+   "y": 40,
+   "end_x": 26,
+   "end_y": 30
+  },
+  {
+   "passer": 2,
+   "receiver": 24,
+   "success": true,
+   "x": 26,
+   "y": 50,
+   "end_x": 30,
+   "end_y": 68
+  },
+  {
+   "passer": 2,
+   "receiver": 35,
+   "success": true,
+   "x": 26,
+   "y": 50,
+   "end_x": 30,
+   "end_y": 12
+  },
+  {
+   "passer": 2,
+   "receiver": 21,
+   "success": true,
+   "x": 26,
+   "y": 50,
+   "end_x": 46,
+   "end_y": 46
+  },
+  {
+   "passer": 2,
+   "receiver": 8,
+   "success": true,
+   "x": 26,
+   "y": 50,
+   "end_x": 48,
+   "end_y": 32
+  },
+  {
+   "passer": 5,
+   "receiver": 24,
+   "success": true,
+   "x": 26,
+   "y": 30,
+   "end_x": 30,
+   "end_y": 68
+  },
+  {
+   "passer": 5,
+   "receiver": 35,
+   "success": true,
+   "x": 26,
+   "y": 30,
+   "end_x": 30,
+   "end_y": 12
+  },
+  {
+   "passer": 5,
+   "receiver": 21,
+   "success": true,
+   "x": 26,
+   "y": 30,
+   "end_x": 46,
+   "end_y": 46
+  },
+  {
+   "passer": 5,
+   "receiver": 8,
+   "success": true,
+   "x": 26,
+   "y": 30,
+   "end_x": 48,
+   "end_y": 32
+  },
+  {
+   "passer": 24,
+   "receiver": 21,
+   "success": true,
+   "x": 30,
+   "y": 68,
+   "end_x": 46,
+   "end_y": 46
+  },
+  {
+   "passer": 24,
+   "receiver": 8,
+   "success": true,
+   "x": 30,
+   "y": 68,
+   "end_x": 48,
+   "end_y": 32
+  },
+  {
+   "passer": 24,
+   "receiver": 19,
+   "success": true,
+   "x": 30,
+   "y": 68,
+   "end_x": 68,
+   "end_y": 68
+  },
+  {
+   "passer": 24,
+   "receiver": 11,
+   "success": true,
+   "x": 30,
+   "y": 68,
+   "end_x": 68,
+   "end_y": 12
+  },
+  {
+   "passer": 35,
+   "receiver": 21,
+   "success": true,
+   "x": 30,
+   "y": 12,
+   "end_x": 46,
+   "end_y": 46
+  },
+  {
+   "passer": 35,
+   "receiver": 8,
+   "success": true,
+   "x": 30,
+   "y": 12,
+   "end_x": 48,
+   "end_y": 32
+  },
+  {
+   "passer": 35,
+   "receiver": 19,
+   "success": true,
+   "x": 30,
+   "y": 12,
+   "end_x": 68,
+   "end_y": 68
+  },
+  {
+   "passer": 35,
+   "receiver": 11,
+   "success": true,
+   "x": 30,
+   "y": 12,
+   "end_x": 68,
+   "end_y": 12
+  },
+  {
+   "passer": 21,
+   "receiver": 8,
+   "success": true,
+   "x": 46,
+   "y": 46,
+   "end_x": 48,
+   "end_y": 32
+  },
+  {
+   "passer": 21,
+   "receiver": 20,
+   "success": true,
+   "x": 46,
+   "y": 46,
+   "end_x": 62,
+   "end_y": 40
+  },
+  {
+   "passer": 21,
+   "receiver": 19,
+   "success": true,
+   "x": 46,
+   "y": 46,
+   "end_x": 68,
+   "end_y": 68
+  },
+  {
+   "passer": 21,
+   "receiver": 11,
+   "success": true,
+   "x": 46,
+   "y": 46,
+   "end_x": 68,
+   "end_y": 12
+  },
+  {
+   "passer": 21,
+   "receiver": 7,
+   "success": false,
+   "x": 46,
+   "y": 46,
+   "end_x": 82,
+   "end_y": 40
+  },
+  {
+   "passer": 8,
+   "receiver": 21,
+   "success": true,
+   "x": 48,
+   "y": 32,
+   "end_x": 46,
+   "end_y": 46
+  },
+  {
+   "passer": 8,
+   "receiver": 20,
+   "success": true,
+   "x": 48,
+   "y": 32,
+   "end_x": 62,
+   "end_y": 40
+  },
+  {
+   "passer": 8,
+   "receiver": 19,
+   "success": true,
+   "x": 48,
+   "y": 32,
+   "end_x": 68,
+   "end_y": 68
+  },
+  {
+   "passer": 8,
+   "receiver": 11,
+   "success": true,
+   "x": 48,
+   "y": 32,
+   "end_x": 68,
+   "end_y": 12
+  },
+  {
+   "passer": 8,
+   "receiver": 7,
+   "success": false,
+   "x": 48,
+   "y": 32,
+   "end_x": 82,
+   "end_y": 40
+  },
+  {
+   "passer": 20,
+   "receiver": 19,
+   "success": true,
+   "x": 62,
+   "y": 40,
+   "end_x": 68,
+   "end_y": 68
+  },
+  {
+   "passer": 20,
+   "receiver": 11,
+   "success": true,
+   "x": 62,
+   "y": 40,
+   "end_x": 68,
+   "end_y": 12
+  },
+  {
+   "passer": 20,
+   "receiver": 7,
+   "success": true,
+   "x": 62,
+   "y": 40,
+   "end_x": 82,
+   "end_y": 40
+  },
+  {
+   "passer": 19,
+   "receiver": 7,
+   "success": true,
+   "x": 68,
+   "y": 68,
+   "end_x": 82,
+   "end_y": 40
+  },
+  {
+   "passer": 19,
+   "receiver": 20,
+   "success": true,
+   "x": 68,
+   "y": 68,
+   "end_x": 62,
+   "end_y": 40
+  },
+  {
+   "passer": 11,
+   "receiver": 7,
+   "success": false,
+   "x": 68,
+   "y": 12,
+   "end_x": 82,
+   "end_y": 40
+  },
+  {
+   "passer": 11,
+   "receiver": 20,
+   "success": false,
+   "x": 68,
+   "y": 12,
+   "end_x": 62,
+   "end_y": 40
+  },
+  {
+   "passer": 7,
+   "receiver": 20,
+   "success": true,
+   "x": 82,
+   "y": 40,
+   "end_x": 62,
+   "end_y": 40
+  },
+  {
+   "passer": 7,
+   "receiver": 19,
+   "success": true,
+   "x": 82,
+   "y": 40,
+   "end_x": 68,
+   "end_y": 68
+  }
+ ],
+ "ball": {
+  "x": 60,
+  "y": 40
+ },
+ "match_info": {
+  "home_team": "Barcelona",
+  "away_team": "Real Madrid",
+  "score_home": 4,
+  "score_away": 3,
+  "minute": 90,
+  "competition": "La Liga 2024/25",
+  "date": "2025-05-11"
+ },
+ "source": {
+  "kind": "reconstructed",
+  "match_id": null,
+  "note": "Real line-ups and score; pass events are synthesised from the formations because no public event data exists for this match."
+ }
+}

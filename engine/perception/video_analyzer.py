@@ -125,8 +125,8 @@ class SyntheticDataGenerator:
             'right', n_players_per_team)
         
         frames = []
-        team_a_pos = [dict(p) for p in team_a_init]
-        team_b_pos = [dict(p) for p in team_b_init]
+        team_a_pos = [dict(p, home_x=p['x'], home_y=p['y']) for p in team_a_init]
+        team_b_pos = [dict(p, home_x=p['x'], home_y=p['y']) for p in team_b_init]
         ball_x, ball_y = 60.0, 40.0
         
         for frame_idx in range(n_frames):
@@ -223,7 +223,13 @@ class SyntheticDataGenerator:
             dy = self.np_rng.normal(0, 0.8)
             
             role = p.get('role', 'MID')
-            
+
+            # Elastic pull back towards the formation slot so players drift
+            # realistically without wandering across the pitch
+            if 'home_x' in p:
+                dx += 0.06 * (p['home_x'] - p['x'])
+                dy += 0.06 * (p['home_y'] - p['y'])
+
             if role == 'GK':
                 # Goalkeeper — small movements around starting position
                 dx *= 0.2

@@ -6,6 +6,8 @@
 
 An AI-powered football analysis engine **and full-stack production web application** that watches matches, understands tactical structure, reasons about strengths and weaknesses, recommends strategies, and explains decisions in natural language. The 4-phase engine is wrapped in a **FastAPI** backend and served through a **React + Tailwind** frontend with **12 interactive features**, **3 input methods** (manual entry, video upload, dataset upload), and **LLM-powered insights** via OpenRouter. Built with a robotics-inspired pipeline: **Sense → Understand → Reason → Act → Explain**.
 
+Every feature ships with **real match demos** — the 2022 World Cup final, the 2005 and 2011 Champions League finals and the 2017 Clásico from [StatsBomb open data](https://github.com/statsbomb/open-data), plus two reconstructed fixtures. One click analyses a real game. **No API key and no account are required**: without an LLM key the tactical knowledge graph answers instead, and without Supabase the app runs in guest mode.
+
 ---
 
 ## 🎯 What It Does
@@ -54,9 +56,11 @@ The React frontend exposes **12 interactive features** — each with manual entr
 
 | Method | Description |
 |--------|-------------|
-| ✏️ **Manual Entry** | Enter player positions, pass events, and match info directly in the UI |
-| 🎥 **Video Upload** | Upload match video (or YouTube URL) — YOLOv8 extracts player positions automatically |
-| 📊 **Dataset Upload** | Upload a CSV or JSON file with pre-collected match data |
+| ✏️ **Manual Entry** | Enter positions, pass events and match info in a validated form with a live pitch preview |
+| 🎥 **Video Upload** | Upload match video or paste a YouTube URL — YOLOv8 + homography extract positions. Without the optional CV packages the backend returns a clearly labelled synthetic snapshot instead of failing |
+| 📊 **Dataset Upload** | Upload CSV or JSON, parsed server-side with helpful errors. Downloadable templates are one click away |
+
+All three feed the same engine: uploads are resolved to player coordinates first, then sent to the analysis endpoints.
 
 ---
 
@@ -94,7 +98,7 @@ Input (positions, passes, stats, video, datasets)
                    ↓ HTTP / JSON
 ┌──────────────────────────────────────────────────┐
 │  FastAPI Backend (port 8000)                     │
-│  22 endpoints · rate limiting · CORS · validation │
+│  30 endpoints · rate limiting · CORS · validation │
 └──────────────────┬───────────────────────────────┘
                    ↓
 ┌──────────────────────────────────────────────────┐
@@ -146,6 +150,9 @@ spaceai-fc/
 │   │   ├── roles.py                     # Player role classification
 │   │   ├── simulation.py               # Tactical simulation & RL
 │   │   ├── space_control.py             # Space control endpoint
+│   │   ├── dataset.py                   # CSV/JSON dataset upload + templates
+│   │   ├── demo.py                      # Bundled real-match demo fixtures
+│   │   ├── player_assessment.py         # Player radar, role & scouting report
 │   │   └── video.py                     # Video upload & YouTube analysis
 │   ├── services/
 │   │   ├── __init__.py
@@ -154,7 +161,8 @@ spaceai-fc/
 │   │   └── video_service.py             # Video processing service
 │   └── utils/
 │       ├── __init__.py
-│       ├── file_handler.py              # File upload handling & validation
+│       ├── file_handler.py              # Upload validation + CSV/JSON dataset parsing
+│       ├── resolve.py                   # Bridges manual / video / dataset inputs to the engine
 │       └── image_encoder.py             # Base64 image encoding for responses
 ├── app/                                 # Streamlit frontend
 │   ├── __init__.py
@@ -209,7 +217,28 @@ spaceai-fc/
 │   └── visualization/
 │       ├── __init__.py
 │       └── pitch.py                     # Football pitch model & player plotting
+├── frontend/                            # React production frontend (Vite + Tailwind v4)
+│   └── src/
+│       ├── app/
+│       │   ├── App.tsx                  # State-machine router + page transitions
+│       │   └── components/
+│       │       ├── Home.tsx             # Dashboard & feature catalogue
+│       │       ├── About.tsx            # Pipeline, phases, stack, data credits
+│       │       ├── Auth.tsx             # Supabase auth + guest mode
+│       │       ├── Settings.tsx         # Backend health, capabilities, preferences
+│       │       ├── FeaturePageInput.tsx # Shared 3-tab input form for 8 features
+│       │       ├── FeaturePageResults.tsx
+│       │       ├── AskSpaceAI.tsx  ·  PlayerAssessment.tsx
+│       │       ├── Simulation.tsx  ·  Compare.tsx  ·  History.tsx
+│       │       ├── common/              # Primitives, DemoPicker, PresetPicker,
+│       │       │                        #   PitchPreview, AnimatedNumber, Markdown
+│       │       ├── results/Sections.tsx # Feature-specific result renderers
+│       │       └── ui/                  # shadcn/ui primitives
+│       └── lib/                         # api.ts, demo.ts, motion.ts, supabase.ts, types.ts
+├── scripts/
+│   └── build_demo_matches.py            # Builds demo fixtures from StatsBomb open data
 ├── data/
+│   ├── demo_matches/                    # Bundled real fixtures + player stat lines (JSON)
 │   ├── processed/                       # Processed datasets
 │   └── raw/                             # Raw data files
 ├── outputs/                             # Generated images, reports, animations, documents
@@ -275,9 +304,34 @@ uvicorn api.main:app --reload --port 8000
 # Terminal 2 — start the React frontend
 cd frontend
 npm install
-npm run dev
+npm run dev          # npm run typecheck / npm run build also available
 ```
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:5173** in your browser. Without Supabase credentials the app runs in
+**guest mode** — every feature works, only saved history is disabled. Each feature has a
+**Try Demo** button that loads the El Clásico line-ups and runs the analysis instantly.
+
+The backend also reads a `.env` file in the project root (`OPENROUTER_API_KEY`,
+`ANTHROPIC_API_KEY`), so you don't have to export keys by hand. Keys are never sent to the browser.
+
+### Demo matches
+Every "Try Demo" button offers six bundled fixtures (`data/demo_matches/`): the 2022 World Cup final,
+the 2005 and 2011 Champions League finals and the 2017 Clásico are built from
+[StatsBomb open data](https://github.com/statsbomb/open-data) (starters' median positions, real pass events;
+data © StatsBomb, non-commercial use with attribution). Barcelona 4-3 Real Madrid (2025) and
+Liverpool 7-0 Manchester United (2023) have no public event data, so they use real line-ups and scores
+with synthesised passes and are labelled "reconstructed". Rebuild the files with
+`python scripts/build_demo_matches.py`.
+
+The other features have demos too. **Player Assessment** offers ten real stat lines counted from the same
+fixtures (Messi, Mbappé, Enzo Fernández, Xavi, Rooney, Gerrard, Kaká and more), normalised per 90 minutes —
+distance and sprints are estimates, since event data has no tracking. **Simulation** and **Compare** offer
+presets themed after each fixture's tactical identity ("Anfield 2023 · High Press v Counter"), which are
+stylised what-ifs rather than replays. **Ask SpaceAI** suggests questions about whatever you analysed last.
+
+### Verify the API
+```bash
+python test_api.py            # exercises every endpoint against the running server
+```
 
 ---
 
@@ -298,7 +352,9 @@ Open **http://localhost:5173** in your browser.
 | Simulation | 🎮 | 5v5 / 7v7 multi-agent tactical simulation, animated visualization | — |
 | Tactical Explanation | 📝 | Full natural language match report (LLM or template fallback) | ✅ |
 
-> Features marked **✅** use OpenRouter (Claude) when `OPENROUTER_API_KEY` is set, and fall back to the knowledge-graph template engine when it's not.
+> Features marked **✅** are *enhanced* by OpenRouter or Anthropic when a key is set. Nothing requires one: the tactical knowledge graph and template engine answer on their own, and the UI always says which mode produced an answer.
+
+Every feature has a **Try Demo** split button. For the eight position-based features it loads a real fixture; Player Assessment offers ten real stat lines; Simulation and Compare offer tactical presets themed after those fixtures.
 
 ---
 
@@ -457,9 +513,12 @@ Open **http://localhost:5173** in your browser.
 
 ### Product
 
-- [x] FastAPI backend (22 endpoints, rate limiting, CORS, validation)
+- [x] FastAPI backend (30 endpoints, rate limiting, CORS, validation)
 - [x] Streamlit MVP (12 features, 3 input methods, LLM integration)
 - [x] Production frontend (React + Tailwind + Supabase + Custom Form Layouts)
+- [x] UI/UX polish pass (motion throughout, skeletons, toasts, empty states, responsive, guest mode)
+- [x] All three input methods working end-to-end (manual validation, video pipeline, dataset upload)
+- [x] Real match demos from StatsBomb open data
 - [ ] Deployment (Vercel / cloud hosting)
 
 ---
@@ -478,13 +537,41 @@ Open **http://localhost:5173** in your browser.
 | **FastAPI** | **REST API backend** |
 | **Uvicorn** | **ASGI server** |
 | **React + Vite** | **Production interactive frontend** |
-| **OpenRouter API** | **LLM-powered insights (Claude)** |
+| **Tailwind CSS v4 + shadcn/ui** | **Design system and primitives** |
+| **Motion (framer-motion)** | **Page transitions, staggered lists, animated counters** |
+| **Supabase** | **Optional auth and saved analysis history** |
+| **statsbombpy** | **Real match data for the demo fixtures** |
+| **OpenRouter / Anthropic API** | **LLM-powered insights (optional)** |
 | slowapi | API rate limiting |
 | httpx / requests | HTTP clients |
 | Pillow | Image processing |
 | YOLOv8 (Ultralytics) | Player detection from video |
 | OpenCV | Video processing |
 | Gymnasium + Stable-Baselines3 | Reinforcement learning |
+
+---
+
+## 🧾 Recent Work
+
+A full polish-and-repair pass across the whole stack.
+
+**Backend fixes**
+- The video pipeline called methods that did not exist on `VideoAnalyzer`, so every upload silently fell back to fake data. It now runs the real load → track → analyse path, takes each track's median position across frames, labels positions by depth, and reports honestly when it has to fall back.
+- Added `POST /api/dataset/upload` with CSV/JSON parsing, clear validation errors and downloadable templates. The dataset input method previously had no endpoint at all.
+- Strategy and Tactical Explanation now accept team positions and run the Phase 1–2 modules themselves, so reports are grounded in real analysis instead of hard-coded placeholder data.
+- The simulation stalled after the first misplaced pass because no agent chased a loose ball; possession stuck at 100% and no goals were ever scored. Agents now contest loose balls, tackles and turnovers are logged, and the response carries replay frames.
+- Player Assessment parsed LLM output on a literal `\n` and returned an error string as the scouting report. It now has a rule-based role model with per-90 normalisation and a position prior, enhanced by an LLM when one is configured.
+- Ask SpaceAI's no-key fallback answers real questions from the knowledge graph rather than apologising.
+- Word export embedded 3 MB of stale images from `outputs/`; it now embeds the request's own visualisations.
+- Formation detection scored candidates by silhouette alone, which read real average positions as two bands like "7-3". `method="auto"` now weighs tactical plausibility across clustering and gap candidates.
+
+**Frontend**
+- Motion throughout: page transitions, staggered cards, animated collapsibles, counters and gauges, loading skeletons and toast notifications.
+- One shared input page for the eight position-based features, with per-field validation, a live SVG pitch preview, drag-and-drop uploads and feature-specific result sections.
+- Guest mode, a real Settings page (backend health and optional-module status), an About page, mobile drawer navigation and a consistent dark theme.
+- Six unused mock components removed, and a broken import that prevented the frontend from building at all.
+
+**Verification**: `test_api.py` covers every endpoint including dataset upload, export and the demo fixtures; `npm run typecheck` passes; a Playwright script drives all 12 features in a real browser with no console errors.
 
 ---
 
@@ -495,6 +582,15 @@ The system follows a robotics-inspired agentic pipeline:
 **Sense → Understand → Reason → Act → Explain**
 
 Designed to function like an intelligent football analyst that observes matches, understands structure, reasons about tactics, recommends strategies, and explains decisions.
+
+---
+
+## 🙏 Data Credits
+
+Demo fixtures and player stat lines are built from [StatsBomb open data](https://github.com/statsbomb/open-data),
+used under their free non-commercial licence with attribution. Data © StatsBomb. Reconstructed fixtures
+(Barcelona 4-3 Real Madrid 2025, Liverpool 7-0 Manchester United 2023) use publicly reported line-ups and
+scores with synthesised pass events, and are labelled as such everywhere they appear.
 
 ---
 

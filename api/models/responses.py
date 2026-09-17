@@ -33,7 +33,9 @@ class HealthResponse(BaseModel):
     version: str
     engine_phases: int
     llm_available: bool
+    llm_provider: str = "knowledge_graph"
     available_tactics: List[str]
+    capabilities: Dict[str, bool] = {}
 
 
 class FeatureInfoItem(BaseModel):
@@ -171,6 +173,10 @@ class IntelligenceResponse(BaseModel):
     swot: List[SWOTItem] = []
     recommendations: List[RecommendationItem] = []
     knowledge_graph_insights: List[str] = []
+    situations: List[str] = []
+    formation_a: Optional[str] = None
+    formation_b: Optional[str] = None
+    visualizations: List[VisualizationData] = []
     error: Optional[str] = None
 
 
@@ -191,6 +197,8 @@ class ExplanationResponse(BaseModel):
     mode: str
     text: str
     sections: List[str] = []
+    summary: Dict[str, Any] = {}
+    visualizations: List[VisualizationData] = []
     error: Optional[str] = None
 
 
@@ -206,6 +214,17 @@ class VideoTrackingData(BaseModel):
 class VideoResponse(BaseModel):
     success: bool
     tracking_data: Optional[VideoTrackingData] = None
+    message: str = ""
+    error: Optional[str] = None
+
+
+class DatasetResponse(BaseModel):
+    success: bool
+    team_a: List[Dict[str, Any]] = []
+    team_b: List[Dict[str, Any]] = []
+    passes: List[Dict[str, Any]] = []
+    match_info: Dict[str, Any] = {}
+    format: str = ""
     message: str = ""
     error: Optional[str] = None
 
@@ -226,13 +245,20 @@ class SimulationResponse(BaseModel):
     success: bool
     tactic_a: str
     tactic_b: str
+    tactic_a_key: str = ""
+    tactic_b_key: str = ""
     goals_a: int
     goals_b: int
     possession_a: float
     possession_b: float
     territorial_control_a: float
+    territorial_control_b: float = 50.0
     steps: int
+    team_size: int = 5
+    pitch_width: float = 60.0
+    pitch_height: float = 40.0
     events: List[Dict[str, Any]] = []
+    frames: List[Dict[str, Any]] = []
     error: Optional[str] = None
 
 

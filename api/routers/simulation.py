@@ -44,17 +44,38 @@ async def simulation_run(req: SimulationRequest):
         sim.set_tactics(req.tactic_a, req.tactic_b)
         stats = sim.run(n_steps=req.steps)
 
+        # Down-sample the positional history so the client can replay the match
+        history = sim.history
+        stride = max(1, len(history) // 150)
+        frames = [
+            {
+                "step": h["step"],
+                "a": [[round(p["x"], 2), round(p["y"], 2)] for p in h["team_a"]],
+                "b": [[round(p["x"], 2), round(p["y"], 2)] for p in h["team_b"]],
+                "ball": [round(h["ball"]["x"], 2), round(h["ball"]["y"], 2)],
+                "pos": h["possession"],
+            }
+            for h in history[::stride]
+        ]
+
         return SimulationResponse(
             success=True,
             tactic_a=stats.get("tactic_a", req.tactic_a),
             tactic_b=stats.get("tactic_b", req.tactic_b),
+            tactic_a_key=req.tactic_a,
+            tactic_b_key=req.tactic_b,
             goals_a=stats.get("goals_a", 0),
             goals_b=stats.get("goals_b", 0),
             possession_a=round(stats.get("possession_a", 50.0), 1),
             possession_b=round(stats.get("possession_b", 50.0), 1),
             territorial_control_a=round(stats.get("territorial_control_a", 50.0), 1),
-            steps=req.steps,
+            territorial_control_b=round(stats.get("territorial_control_b", 50.0), 1),
+            steps=len(history),
+            team_size=req.team_size,
+            pitch_width=float(sim.pitch_w),
+            pitch_height=float(sim.pitch_h),
             events=sim.events[:50],  # cap event list for API response size
+            frames=frames,
         )
     except ImportError as exc:
         raise HTTPException(status_code=503, detail=f"Simulation module unavailable: {exc}")
@@ -93,10 +114,12 @@ async def simulation_compare(req: SimulationCompareRequest):
         # Simple verdict
         score1 = m1["avg_goals_a"] - m1["avg_goals_b"] + (m1["avg_possession_a"] - 50) * 0.05
         score2 = m2["avg_goals_a"] - m2["avg_goals_b"] + (m2["avg_possession_a"] - 50) * 0.05
+        from engine.intelligence.simulation import TACTICAL_PRESETS
+        name = lambda k: TACTICAL_PRESETS.get(k, {}).get("name", k)
         if score1 > score2:
-            verdict = f"Matchup 1 ({req.tactic_a} vs {req.tactic_b}) performs better."
+            verdict = f"Matchup 1 ({name(req.tactic_a)} vs {name(req.tactic_b)}) performs better."
         elif score2 > score1:
-            verdict = f"Matchup 2 ({req.tactic_a2} vs {req.tactic_b2}) performs better."
+            verdict = f"Matchup 2 ({name(req.tactic_a2)} vs {name(req.tactic_b2)}) performs better."
         else:
             verdict = "Both matchups are evenly balanced."
 

@@ -1,225 +1,136 @@
-import { motion } from "motion/react";
-import { Clock, Search, Filter, BarChart3, Map, Share2, Trash2, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Clock, Search, Trash2, Loader2, ArrowUpDown, Play, UserRound } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { deleteAnalysis, isSupabaseConfigured } from "../../lib/supabase";
-import type { SavedAnalysis } from "../../lib/types";
-
-// Feature → icon mapping
-const featureIconMap: Record<string, any> = {
-  "Full Match Analysis": BarChart3,
-  "Space Control": Map,
-  "Pass Network": Share2,
-  default: BarChart3,
-};
+import type { SavedAnalysis, UserProfile } from "../../lib/types";
+import { FEATURES } from "./Home";
+import { Page, PageHeader, EmptyState, Button, StaggerGrid, StaggerItem } from "./common/Primitives";
+import { cardHover } from "../../lib/motion";
 
 interface HistoryProps {
-  userId?: string;
-  savedAnalyses?: SavedAnalysis[];
-  onLoadAnalysis?: (analysis: SavedAnalysis) => void;
-  onDeleted?: () => void;
+  user: UserProfile;
+  savedAnalyses: SavedAnalysis[];
+  onLoadAnalysis: (analysis: SavedAnalysis) => void;
+  onDeleted: () => void;
+  onNavigate: (view: string) => void;
 }
 
-export function History({
-  userId,
-  savedAnalyses = [],
-  onLoadAnalysis,
-  onDeleted,
-}: HistoryProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function History({ user, savedAnalyses, onLoadAnalysis, onDeleted, onNavigate }: HistoryProps) {
+  const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "feature">("date");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const supabaseOk = isSupabaseConfigured();
 
-  const filteredHistory = savedAnalyses
-    .filter(
-      (item) =>
-        item.match_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.feature.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "date")
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      return a.feature.localeCompare(b.feature);
-    });
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return savedAnalyses
+      .filter((a) => a.match_name.toLowerCase().includes(q) || a.feature.toLowerCase().includes(q))
+      .sort((a, b) => (sortBy === "date" ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : a.feature.localeCompare(b.feature)));
+  }, [savedAnalyses, query, sortBy]);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleDelete = async (id: string) => {
     setDeletingId(id);
-    await deleteAnalysis(id);
+    const { error } = await deleteAnalysis(id);
     setDeletingId(null);
-    onDeleted?.();
-  };
-
-  const formatDate = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return iso.slice(0, 10);
-    }
-  };
-
-  const formatTime = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } catch {
-      return "";
-    }
+    setConfirmId(null);
+    if (error) toast.error("Could not delete", { description: error });
+    else { toast.success("Analysis deleted"); onDeleted(); }
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto p-8 space-y-6">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Your Analyses</h1>
-              <p className="text-white/60">Review and manage your tactical analysis history</p>
-            </div>
-            <div className="flex items-center gap-2 text-white/50">
-              <Clock className="w-5 h-5" />
-              <span className="text-sm">{savedAnalyses.length} total analyses</span>
-            </div>
-          </div>
-        </motion.div>
+    <Page>
+      <div className="space-y-5">
+        <PageHeader
+          icon={Clock}
+          eyebrow="Library"
+          title="Your analyses"
+          description={`${savedAnalyses.length} saved ${savedAnalyses.length === 1 ? "analysis" : "analyses"}`}
+        />
 
-        {/* Supabase not configured warning */}
-        {!supabaseOk && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-400/80"
-          >
-            💡 Supabase is not configured — add{" "}
-            <code className="text-yellow-300">VITE_SUPABASE_URL</code> and{" "}
-            <code className="text-yellow-300">VITE_SUPABASE_ANON_KEY</code> to your{" "}
-            <code>.env</code> to enable history.
-          </motion.div>
-        )}
-
-        {/* Search and Filter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex items-center gap-4"
-        >
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search analyses..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-white/40" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 cursor-pointer"
-            >
-              <option value="date">Sort by Date</option>
-              <option value="feature">Sort by Feature</option>
-            </select>
-          </div>
-        </motion.div>
-
-        {/* History Grid */}
-        {filteredHistory.length > 0 ? (
-          <div className="grid grid-cols-3 gap-6">
-            {filteredHistory.map((item, index) => {
-              const Icon = featureIconMap[item.feature] ?? featureIconMap.default;
-              const isDeleting = deletingId === item.id;
-
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
-                  className="group cursor-pointer"
-                  onClick={() => onLoadAnalysis?.(item)}
-                >
-                  <div
-                    className="rounded-xl backdrop-blur-xl border border-white/10 overflow-hidden transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,217,255,0.15)]"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-                    }}
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative h-40 bg-gradient-to-br from-cyan-900/30 to-blue-900/30 flex items-center justify-center overflow-hidden">
-                      <div
-                        className="absolute inset-0 opacity-20"
-                        style={{
-                          backgroundImage: `radial-gradient(circle at 50% 50%, #00d9ff 1px, transparent 1px)`,
-                          backgroundSize: "20px 20px",
-                        }}
-                      />
-                      <Icon className="w-16 h-16 text-cyan-400/40 relative z-10" />
-                      <div className="absolute top-3 right-3">
-                        <button
-                          onClick={(e) => handleDelete(e, item.id)}
-                          disabled={isDeleting}
-                          className="p-2 rounded-lg bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20 disabled:cursor-not-allowed"
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="w-4 h-4 text-white/70 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4 text-white/70 hover:text-red-400" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-4">
-                      <h3 className="font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">
-                        {item.match_name}
-                      </h3>
-                      <p className="text-sm text-white/60 mb-3">{item.feature}</p>
-                      <div className="flex items-center justify-between text-xs text-white/40">
-                        <span>{formatDate(item.created_at)}</span>
-                        <span>{formatTime(item.created_at)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+        {user.isGuest || !supabaseOk ? (
+          <EmptyState
+            icon={UserRound}
+            title={supabaseOk ? "History needs an account" : "History is not configured"}
+            description={supabaseOk ? "Sign in to save analyses and revisit them later." : "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env.local to enable saved analyses."}
+            action={<Button variant="secondary" onClick={() => onNavigate(supabaseOk ? "logout" : "settings")}>{supabaseOk ? "Sign in" : "Open settings"}</Button>}
+          />
         ) : (
-          /* Empty State */
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-20 text-center"
-          >
-            <div
-              className="max-w-md mx-auto rounded-2xl p-12 backdrop-blur-xl border border-white/10"
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-              }}
-            >
-              <Clock className="w-20 h-20 text-white/20 mx-auto mb-6" />
-              <h2 className="text-xl font-bold text-white mb-2">
-                {searchQuery ? "No matching analyses" : "No analyses yet"}
-              </h2>
-              <p className="text-white/50">
-                {searchQuery ? "Try a different search term." : "Start by running your first analysis!"}
-              </p>
-            </div>
-          </motion.div>
+          <>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex flex-col gap-3 sm:flex-row">
+              <label className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by match or feature…" className="field rounded-xl py-3 pl-10" />
+              </label>
+              <label className="relative">
+                <ArrowUpDown className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="field cursor-pointer rounded-xl py-3 pl-10 pr-8 sm:w-48">
+                  <option value="date">Newest first</option>
+                  <option value="feature">By feature</option>
+                </select>
+              </label>
+            </motion.div>
+
+            {filtered.length > 0 ? (
+              <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <AnimatePresence>
+                  {filtered.map((item) => {
+                    const Icon = FEATURES.find((f) => f.name === item.feature)?.icon ?? Clock;
+                    const isDeleting = deletingId === item.id;
+                    return (
+                      <StaggerItem key={item.id}>
+                        <motion.div {...cardHover} layout className="glass group relative overflow-hidden">
+                          <button type="button" onClick={() => onLoadAnalysis(item)} className="block w-full text-left">
+                            <div className="relative flex h-32 items-center justify-center bg-gradient-to-br from-brand/15 to-violet/10">
+                              <div className="pitch-grid-bg absolute inset-0 opacity-70" />
+                              <Icon className="relative h-12 w-12 text-brand/60 transition-transform group-hover:scale-110" />
+                              <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100"><Play className="h-3 w-3" /> Open</span>
+                            </div>
+                            <div className="p-4">
+                              <h3 className="truncate font-bold text-white transition-colors group-hover:text-brand">{item.match_name}</h3>
+                              <p className="text-sm text-text-secondary">{item.feature}</p>
+                              <div className="mt-2 flex items-center justify-between text-xs text-text-muted">
+                                <span>{formatDate(item.created_at)}</span><span>{formatTime(item.created_at)}</span>
+                              </div>
+                            </div>
+                          </button>
+                          <div className="absolute right-3 top-3">
+                            {confirmId === item.id ? (
+                              <div className="flex items-center gap-1 rounded-lg bg-black/70 p-1 backdrop-blur">
+                                <button type="button" onClick={() => handleDelete(item.id)} disabled={isDeleting} className="rounded-md bg-danger px-2 py-1 text-xs font-semibold text-white">{isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Delete"}</button>
+                                <button type="button" onClick={() => setConfirmId(null)} className="rounded-md px-2 py-1 text-xs text-white/80 hover:bg-white/10">Cancel</button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => setConfirmId(item.id)} aria-label="Delete analysis" className="rounded-lg bg-black/50 p-2 text-white/70 opacity-0 backdrop-blur transition-all hover:bg-danger/30 hover:text-danger group-hover:opacity-100">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      </StaggerItem>
+                    );
+                  })}
+                </AnimatePresence>
+              </StaggerGrid>
+            ) : (
+              <EmptyState
+                icon={Clock}
+                title={query ? "No matching analyses" : "Nothing saved yet"}
+                description={query ? "Try a different search term." : "Run any feature and press “Save to history” on the results page."}
+                action={!query ? <Button onClick={() => onNavigate("full-match")}>Run an analysis</Button> : undefined}
+              />
+            )}
+          </>
         )}
       </div>
-    </div>
+    </Page>
   );
+}
+
+function formatDate(iso: string) {
+  try { return new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso.slice(0, 10); }
+}
+function formatTime(iso: string) {
+  try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch { return ""; }
 }

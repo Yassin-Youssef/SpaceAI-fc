@@ -1,262 +1,167 @@
 import { motion } from "motion/react";
 import {
-  BarChart3,
-  Share2,
-  Map,
-  Shield,
-  Zap,
-  Grid3x3,
-  Lightbulb,
-  User,
-  MessageSquare,
-  GitCompare,
-  Gamepad2,
-  FileText,
-  ArrowRight,
+  BarChart3, Share2, Map, Shield, Zap, Grid3x3, Lightbulb, User, MessageSquare, GitCompare, Gamepad2,
+  FileText, ArrowRight, Clock, Info, Sparkles, type LucideIcon,
 } from "lucide-react";
 import type { UserProfile, SavedAnalysis } from "../../lib/types";
-
-
+import { Page, StaggerGrid, StaggerItem, Button, EmptyState } from "./common/Primitives";
+import { cardHover } from "../../lib/motion";
 
 interface Feature {
   id: string;
-  icon: any;
+  icon: LucideIcon;
   name: string;
   description: string;
-  emoji: string;
+  group: "Analysis" | "Intelligence" | "Advanced";
 }
 
-const features: Feature[] = [
-  {
-    id: "full-match",
-    icon: BarChart3,
-    emoji: "🏟️",
-    name: "Full Match Analysis",
-    description: "Complete tactical breakdown",
-  },
-  {
-    id: "pass-network",
-    icon: Share2,
-    emoji: "🔗",
-    name: "Pass Network",
-    description: "Passing structure & key distributors",
-  },
-  {
-    id: "space-control",
-    icon: Map,
-    emoji: "🗺️",
-    name: "Space Control",
-    description: "Territorial dominance mapping",
-  },
-  {
-    id: "formation",
-    icon: Shield,
-    emoji: "📐",
-    name: "Formation Detection",
-    description: "Identify team shape & structure",
-  },
-  {
-    id: "press-resistance",
-    icon: Zap,
-    emoji: "💪",
-    name: "Press Resistance",
-    description: "Measure pressing survival",
-  },
-  {
-    id: "patterns",
-    icon: Grid3x3,
-    emoji: "🔍",
-    name: "Tactical Patterns",
-    description: "Detect overlaps, blocks, overloads",
-  },
-  {
-    id: "strategy",
-    icon: Lightbulb,
-    emoji: "🎯",
-    name: "Strategy Recommendations",
-    description: "AI-powered tactical suggestions",
-  },
-  {
-    id: "player-assessment",
-    icon: User,
-    emoji: "👤",
-    name: "Player Assessment",
-    description: "Scouting reports & radar charts",
-  },
-  {
-    id: "ask-ai",
-    icon: MessageSquare,
-    emoji: "💬",
-    name: "Ask SpaceAI",
-    description: "Tactical Q&A with AI",
-  },
-  {
-    id: "compare",
-    icon: GitCompare,
-    emoji: "⚖️",
-    name: "Compare",
-    description: "Side-by-side tactical comparison",
-  },
-  {
-    id: "simulation",
-    icon: Gamepad2,
-    emoji: "🎮",
-    name: "Simulation",
-    description: "What-if tactical testing",
-  },
-  {
-    id: "explanation",
-    icon: FileText,
-    emoji: "📝",
-    name: "Tactical Explanation",
-    description: "Full match analysis report",
-  },
-];
-
-const recentAnalysesPlaceholder = [
-  { id: "1", match_name: "Barcelona vs Real Madrid", feature: "Full Match Analysis", created_at: "2026-04-12T14:30:00Z" },
-  { id: "2", match_name: "Man City vs Arsenal", feature: "Space Control", created_at: "2026-04-10T09:15:00Z" },
-  { id: "3", match_name: "Bayern vs Dortmund", feature: "Pass Network", created_at: "2026-04-08T16:45:00Z" },
+export const FEATURES: Feature[] = [
+  { id: "full-match", icon: BarChart3, name: "Full Match Analysis", description: "Every engine phase in one run: pitch, passes, space, formations, SWOT, recommendations and a written report.", group: "Analysis" },
+  { id: "pass-network", icon: Share2, name: "Pass Network", description: "Directed pass graph with centrality metrics, key distributor and weak links.", group: "Analysis" },
+  { id: "space-control", icon: Map, name: "Space Control", description: "Voronoi and influence maps showing who owns each zone of the pitch.", group: "Analysis" },
+  { id: "formation", icon: Shield, name: "Formation Detection", description: "Clustering on player depth to read the shape of both teams, with confidence.", group: "Analysis" },
+  { id: "press-resistance", icon: Zap, name: "Press Resistance", description: "How well a side plays through pressure, scored 0–100 with vulnerable zones.", group: "Analysis" },
+  { id: "patterns", icon: Grid3x3, name: "Tactical Patterns", description: "Overlaps, compact blocks, wide overloads, high lines and low blocks.", group: "Analysis" },
+  { id: "strategy", icon: Lightbulb, name: "Strategy Recommendations", description: "Prioritised adjustments reasoned from SWOT and the knowledge graph.", group: "Intelligence" },
+  { id: "ask-ai", icon: MessageSquare, name: "Ask SpaceAI", description: "Conversational tactical Q&A grounded in your latest analysis.", group: "Intelligence" },
+  { id: "explanation", icon: FileText, name: "Tactical Explanation", description: "A natural-language match report from the template engine or an LLM.", group: "Intelligence" },
+  { id: "player-assessment", icon: User, name: "Player Assessment", description: "Attribute radar, best role and scouting report from video, stats or ratings.", group: "Advanced" },
+  { id: "compare", icon: GitCompare, name: "Compare", description: "Run two tactical match-ups side by side and see which setup wins.", group: "Advanced" },
+  { id: "simulation", icon: Gamepad2, name: "Simulation", description: "Multi-agent 5v5 / 7v7 simulation with an animated replay.", group: "Advanced" },
 ];
 
 interface HomeProps {
-  userName?: string;
   user?: UserProfile | null;
   recentAnalyses?: SavedAnalysis[];
-  onFeatureClick?: (featureId: string) => void;
+  onFeatureClick: (featureId: string) => void;
+  onNavigate: (view: string) => void;
 }
 
-export function Home({ userName, user, recentAnalyses = recentAnalysesPlaceholder as any, onFeatureClick }: HomeProps) {
-  const heroFeature = features[0];
-  const gridFeatures = features.slice(1);
+export function Home({ user, recentAnalyses = [], onFeatureClick, onNavigate }: HomeProps) {
+  const hero = FEATURES[0];
+  const HeroIcon = hero.icon;
+  const groups: Feature["group"][] = ["Analysis", "Intelligence", "Advanced"];
+  const firstName = user?.full_name?.split(" ")[0] ?? "Manager";
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
-        {/* Welcome Message */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Welcome back, <span className="text-cyan-400">{user?.full_name?.split(" ")[0] ?? userName ?? "Manager"}</span>
-          </h1>
-          <p className="text-white/60">Ready to unlock tactical intelligence</p>
+    <Page>
+      <div className="space-y-8">
+        {/* Welcome */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="eyebrow mb-2">Tactical intelligence · Sense → Understand → Reason → Act → Explain</div>
+            <h1 className="text-3xl font-bold text-white sm:text-4xl">
+              Welcome back, <span className="text-brand">{firstName}</span>
+            </h1>
+            <p className="mt-1 text-text-secondary">Pick a feature, load the El Clásico demo, and let the engine read the game.</p>
+          </div>
+          <Button variant="secondary" icon={Info} onClick={() => onNavigate("about")}>How it works</Button>
         </motion.div>
 
-        {/* Hero Feature Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* Hero */}
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          onClick={() => onFeatureClick?.(heroFeature.id)}
-          className="relative group cursor-pointer"
+          transition={{ duration: 0.45, delay: 0.08 }}
+          whileHover={{ y: -3 }}
+          onClick={() => onFeatureClick(hero.id)}
+          className="glass-brand group relative block w-full overflow-hidden p-6 text-left sm:p-8"
         >
-          <div
-            className="relative rounded-2xl p-8 backdrop-blur-xl border border-cyan-500/30 overflow-hidden transition-all duration-300 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(0,217,255,0.2)]"
-            style={{
-              background: `
-                linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(0, 217, 255, 0.05) 100%),
-                url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="none"/><path d="M0,50 L100,50 M50,0 L50,100" stroke="rgba(0,217,255,0.1)" stroke-width="1"/></svg>')
-              `,
-              backgroundSize: "100% 100%, 50px 50px",
-            }}
-          >
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_40px_rgba(0,217,255,0.4)] group-hover:scale-110 transition-transform">
-                  <span className="text-4xl">{heroFeature.emoji}</span>
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">{heroFeature.name}</h2>
-                  <p className="text-lg text-white/60">{heroFeature.description}</p>
-                </div>
+          <div className="pitch-grid-bg pointer-events-none absolute inset-0 opacity-70" />
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand/20 blur-3xl"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_40px_rgba(0,217,255,0.45)] transition-transform group-hover:scale-105 sm:h-20 sm:w-20">
+                <HeroIcon className="h-8 w-8 text-white sm:h-10 sm:w-10" />
               </div>
-              <ArrowRight className="w-8 h-8 text-cyan-400 group-hover:translate-x-2 transition-transform" />
+              <div>
+                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand"><Sparkles className="h-3.5 w-3.5" /> Start here</div>
+                <h2 className="text-2xl font-bold text-white sm:text-3xl">{hero.name}</h2>
+                <p className="mt-1 max-w-xl text-sm text-text-secondary sm:text-base">{hero.description}</p>
+              </div>
             </div>
-
-            {/* Glow effect on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowRight className="hidden h-8 w-8 shrink-0 text-brand transition-transform group-hover:translate-x-2 sm:block" />
           </div>
-        </motion.div>
+        </motion.button>
 
-        {/* Feature Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          {gridFeatures.map((feature, index) => {
-            const Icon = feature.icon;
+        {/* Feature groups */}
+        {groups.map((group, gi) => (
+          <section key={group}>
+            <div className="mb-3 flex items-center gap-3">
+              <h2 className="text-lg font-bold text-white">{group}</h2>
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+            <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" stagger={0.05}>
+              {FEATURES.filter((f) => f.group === group && f.id !== hero.id).map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <StaggerItem key={feature.id}>
+                    <motion.button
+                      type="button"
+                      {...cardHover}
+                      onClick={() => onFeatureClick(feature.id)}
+                      className="glass group relative h-full w-full p-5 text-left transition-colors hover:border-brand/40"
+                    >
+                      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-white/10 to-white/5 text-brand transition-all group-hover:from-brand/25 group-hover:to-brand/10">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="mb-1 text-base font-bold text-white transition-colors group-hover:text-brand">{feature.name}</h3>
+                      <p className="text-sm leading-relaxed text-text-secondary">{feature.description}</p>
+                      <ArrowRight className="absolute right-4 top-5 h-4 w-4 text-text-muted opacity-0 transition-all group-hover:translate-x-1 group-hover:text-brand group-hover:opacity-100" />
+                    </motion.button>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerGrid>
+            {gi < groups.length - 1 && <div className="h-2" />}
+          </section>
+        ))}
 
-            return (
-              <motion.div
-                key={feature.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 + index * 0.05 }}
-                onClick={() => onFeatureClick?.(feature.id)}
-                className="group cursor-pointer"
-              >
-                <div
-                  className="relative rounded-xl p-6 backdrop-blur-xl border border-white/10 h-full transition-all duration-300 hover:border-cyan-500/40 hover:bg-white/5"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-                  }}
-                >
-                  {/* Icon */}
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <span className="text-2xl">{feature.emoji}</span>
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="text-base font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                    {feature.name}
-                  </h3>
-                  <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
-
-                  {/* Hover glow */}
-                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                    style={{
-                      boxShadow: "inset 0 0 30px rgba(0, 217, 255, 0.1)",
-                    }}
-                  />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Recent Analyses */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="pt-4"
-        >
-          <h2 className="text-xl font-bold text-white mb-4">Recent Analyses</h2>
-          <div className="grid grid-cols-3 gap-4">
-          {recentAnalyses.map((analysis: any, index: number) => (
-              <motion.div
-                key={analysis.id ?? index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.9 + index * 0.1 }}
-                className="rounded-lg p-4 backdrop-blur-xl border border-white/10 hover:border-cyan-500/30 cursor-pointer transition-all group"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <span className="text-xs text-white/40">
-                    {analysis.date ?? analysis.created_at?.slice(0, 10)}
-                  </span>
-                </div>
-                <h3 className="font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">
-                  {analysis.match ?? analysis.match_name}
-                </h3>
-                <p className="text-xs text-white/50">{analysis.feature}</p>
-              </motion.div>
-            ))}
+        {/* Recent analyses */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white">Recent analyses</h2>
+            {recentAnalyses.length > 0 && <button type="button" onClick={() => onNavigate("history")} className="text-sm font-semibold text-brand hover:underline">View all</button>}
           </div>
-        </motion.div>
+          {recentAnalyses.length > 0 ? (
+            <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {recentAnalyses.slice(0, 3).map((a) => (
+                <StaggerItem key={a.id}>
+                  <button type="button" onClick={() => onNavigate("history")} className="glass group w-full p-4 text-left transition-colors hover:border-brand/40">
+                    <div className="mb-2 flex items-start justify-between">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/15 text-brand"><Clock className="h-4 w-4" /></div>
+                      <span className="text-xs text-text-muted">{formatDate(a.created_at)}</span>
+                    </div>
+                    <h3 className="truncate font-bold text-white transition-colors group-hover:text-brand">{a.match_name}</h3>
+                    <p className="text-xs text-text-secondary">{a.feature}</p>
+                  </button>
+                </StaggerItem>
+              ))}
+            </StaggerGrid>
+          ) : (
+            <EmptyState
+              compact
+              icon={Clock}
+              title="No analyses saved yet"
+              description={user?.isGuest ? "Sign in with a Supabase-backed account to keep a history of your analyses." : "Run any feature and press “Save to history” to see it here."}
+            />
+          )}
+        </section>
       </div>
-    </div>
+    </Page>
   );
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short" });
+  } catch {
+    return iso.slice(0, 10);
+  }
 }

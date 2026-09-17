@@ -1,0 +1,110 @@
+[
+ {
+  "id": "clasico-2025",
+  "title": "Barcelona 4-3 Real Madrid",
+  "subtitle": "La Liga · Estadi Olímpic Lluís Companys · 11 May 2025 · title decider",
+  "date": "2025-05-11",
+  "competition": "La Liga 2024/25",
+  "team_a": "Barcelona",
+  "team_b": "Real Madrid",
+  "score": {
+   "a": 4,
+   "b": 3
+  },
+  "source_kind": "reconstructed",
+  "formation_a": "4-2-3-1",
+  "formation_b": "4-2-3-1",
+  "players": 22,
+  "passes": 37
+ },
+ {
+  "id": "wc2022-final",
+  "title": "Argentina 3-3 France",
+  "subtitle": "FIFA World Cup Final · Lusail · 18 Dec 2022 (Argentina won 4-2 on penalties)",
+  "date": "2022-12-18",
+  "competition": "FIFA World Cup 2022 — Final",
+  "team_a": "Argentina",
+  "team_b": "France",
+  "score": {
+   "a": 3,
+   "b": 3
+  },
+  "source_kind": "statsbomb",
+  "formation_a": "4-3-3",
+  "formation_b": "4-2-3-1",
+  "players": 22,
+  "passes": 260
+ },
+ {
+  "id": "clasico-2017",
+  "title": "Real Madrid 2-3 Barcelona",
+  "subtitle": "La Liga · Santiago Bernabéu · 23 Apr 2017 · Messi 92' winner",
+  "date": "2017-04-23",
+  "competition": "La Liga 2016/17",
+  "team_a": "Barcelona",
+  "team_b": "Real Madrid",
+  "score": {
+   "a": 3,
+   "b": 2
+  },
+  "source_kind": "statsbomb",
+  "formation_a": "4-1-2-1-2",
+  "formation_b": "4-3-3",
+  "players": 22,
+  "passes": 260
+ },
+ {
+  "id": "ucl2011-final",
+  "title": "Barcelona 3-1 Manchester United",
+  "subtitle": "Champions League Final · Wembley · 28 May 2011",
+  "date": "2011-05-28",
+  "competition": "UEFA Champions League 2010/11 — Final",
+  "team_a": "Barcelona",
+  "team_b": "Manchester United",
+  "score": {
+   "a": 3,
+   "b": 1
+  },
+  "source_kind": "statsbomb",
+  "formation_a": "4-1-2-2-1",
+  "formation_b": "4-2-2-2",
+  "players": 22,
+  "passes": 260
+ },
+ {
+  "id": "ucl2005-final",
+  "title": "Liverpool 3-3 AC Milan",
+  "subtitle": "Champions League Final · Istanbul · 25 May 2005 (Liverpool won 3-2 on penalties)",
+  "date": "2005-05-25",
+  "competition": "UEFA Champions League 2004/05 — Final",
+  "team_a": "Liverpool",
+  "team_b": "AC Milan",
+  "score": {
+   "a": 3,
+   "b": 3
+  },
+  "source_kind": "statsbomb",
+  "formation_a": "4-4-1-1",
+  "formation_b": "4-1-2-1-2",
+  "players": 22,
+  "passes": 260
+ },
+ {
+  "id": "liverpool-7-0",
+  "title": "Liverpool 7-0 Manchester United",
+  "subtitle": "Premier League · Anfield · 5 Mar 2023 · record derby win",
+  "date": "2023-03-05",
+  "competition": "Premier League 2022/23",
+  "team_a": "Liverpool",
+  "team_b": "Manchester United",
+  "score": {
+   "a": 7,
+   "b": 0
+  },
+  "source_kind": "reconstructed",
+  "formation_a": "4-3-3",
+  "formation_b": "4-2-3-1",
+  "players": 22,
+  "passes": 40
+ }
+]

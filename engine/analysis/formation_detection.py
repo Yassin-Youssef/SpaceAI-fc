@@ -69,12 +69,90 @@ class FormationDetector:
                 'method': which method was used
         """
         if method == "auto":
-            method = "clustering" if HAS_SKLEARN else "gap"
+            return self._detect_auto()
         
         if method == "clustering":
             return self._detect_clustering()
         else:
             return self._detect_gap()
+    
+    # ── Auto: choose the most plausible of several candidates ──
+    
+    COMMON_FORMATIONS = {
+        "4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3", "4-1-4-1", "4-1-2-3",
+        "5-3-2", "5-4-1", "4-5-1", "3-4-2-1", "4-3-1-2", "4-2-2-2", "3-4-1-2",
+        "4-4-1-1", "3-5-1-1", "5-2-3",
+    }
+    
+    @staticmethod
+    def _plausibility(formation, confidence):
+        """
+        Score a candidate formation string by how much it looks like a real
+        team shape.  Real average positions often cluster into two bands, which
+        the silhouette score loves but no analyst would call a formation.
+        """
+        try:
+            lines = [int(c) for c in formation.split("-")]
+        except ValueError:
+            return -10.0
+        score = float(confidence)
+        n_lines = len(lines)
+        if n_lines in (3, 4):
+            score += 2.0
+        elif n_lines == 2:
+            score -= 2.0
+        biggest = max(lines)
+        if biggest <= 5:
+            score += 1.0
+        else:
+            score -= 1.5 * (biggest - 5)
+        if min(lines) == 0:
+            score -= 3.0
+        if lines[0] in (3, 4, 5):
+            score += 1.0
+        if formation in FormationDetector.COMMON_FORMATIONS:
+            score += 2.0
+        return score
+    
+    def _detect_auto(self):
+        """Evaluate clustering (k=2..4, both algorithms) and gap candidates."""
+        outfield = [p for p in self.players if p.get('position') != 'GK']
+        candidates = []
+        
+        if HAS_SKLEARN and len(outfield) >= 4:
+            x_values = np.array([p['x'] for p in outfield]).reshape(-1, 1)
+            avg_x = float(np.mean(x_values))
+            for k in (2, 3, 4):
+                if k >= len(outfield):
+                    continue
+                for algo in ("kmeans", "agglomerative"):
+                    if algo == "kmeans":
+                        labels = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(x_values)
+                    else:
+                        labels = AgglomerativeClustering(n_clusters=k).fit_predict(x_values)
+                    try:
+                        sil = float(silhouette_score(x_values, labels))
+                    except ValueError:
+                        sil = 0.0
+                    groups = {}
+                    for i, player in enumerate(outfield):
+                        groups.setdefault(labels[i], []).append(player)
+                    ordered = sorted(groups.values(), key=lambda g: np.mean([p['x'] for p in g]))
+                    if avg_x > 60:
+                        ordered = list(reversed(ordered))
+                    formation = "-".join(str(len(g)) for g in ordered)
+                    confidence = round(max(0.0, min(1.0, (sil + 1) / 2)), 2)
+                    candidates.append({
+                        'formation': formation, 'confidence': confidence,
+                        'lines': ordered, 'method': 'clustering',
+                    })
+        
+        candidates.append(self._detect_gap())
+        
+        best = max(candidates, key=lambda c: self._plausibility(c['formation'], c['confidence']))
+        if best['formation'] in self.COMMON_FORMATIONS:
+            best['confidence'] = round(min(1.0, best['confidence'] + 0.15), 2)
+        return best
     
     def _detect_clustering(self):
         """Formation detection using scikit-learn clustering."""

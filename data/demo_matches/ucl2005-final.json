@@ -1,0 +1,2539 @@
+{
+ "id": "ucl2005-final",
+ "title": "Liverpool 3-3 AC Milan",
+ "subtitle": "Champions League Final · Istanbul · 25 May 2005 (Liverpool won 3-2 on penalties)",
+ "competition": "UEFA Champions League 2004/05 — Final",
+ "date": "2005-05-25",
+ "team_a": {
+  "name": "Liverpool",
+  "color": "#00d9ff",
+  "formation": "4-4-1-1"
+ },
+ "team_b": {
+  "name": "AC Milan",
+  "color": "#ff5a6e",
+  "formation": "4-1-2-1-2"
+ },
+ "score": {
+  "a": 3,
+  "b": 3
+ },
+ "players_a": [
+  {
+   "name": "Steven Gerrard",
+   "number": 8,
+   "x": 55.9,
+   "y": 51.5,
+   "position": "CM"
+  },
+  {
+   "name": "Milan Baroš",
+   "number": 5,
+   "x": 89.8,
+   "y": 36.1,
+   "position": "ST"
+  },
+  {
+   "name": "Xabi Alonso",
+   "number": 14,
+   "x": 56.2,
+   "y": 42.9,
+   "position": "CDM"
+  },
+  {
+   "name": "Luis García",
+   "number": 10,
+   "x": 71.3,
+   "y": 39.5,
+   "position": "RM"
+  },
+  {
+   "name": "John Arne Riise",
+   "number": 6,
+   "x": 66.2,
+   "y": 9.3,
+   "position": "LM"
+  },
+  {
+   "name": "Djimi Traoré",
+   "number": 21,
+   "x": 44.5,
+   "y": 12.1,
+   "position": "LB"
+  },
+  {
+   "name": "Jamie Carragher",
+   "number": 23,
+   "x": 38.5,
+   "y": 60.8,
+   "position": "CB"
+  },
+  {
+   "name": "Sami Hyypiä",
+   "number": 4,
+   "x": 35.2,
+   "y": 31.1,
+   "position": "CB"
+  },
+  {
+   "name": "Jerzy Dudek",
+   "number": 1,
+   "x": 7.0,
+   "y": 38.9,
+   "position": "GK"
+  },
+  {
+   "name": "Harry Kewell",
+   "number": 7,
+   "x": 74.8,
+   "y": 40.6,
+   "position": "CAM"
+  },
+  {
+   "name": "Steve Finnan",
+   "number": 3,
+   "x": 56.0,
+   "y": 75.6,
+   "position": "RB"
+  }
+ ],
+ "players_b": [
+  {
+   "name": "Clarence Seedorf",
+   "number": 20,
+   "x": 60.0,
+   "y": 52.0,
+   "position": "CM"
+  },
+  {
+   "name": "Paolo Maldini",
+   "number": 3,
+   "x": 64.9,
+   "y": 72.3,
+   "position": "LB"
+  },
+  {
+   "name": "Alessandro Nesta",
+   "number": 13,
+   "x": 83.8,
+   "y": 30.8,
+   "position": "CB"
+  },
+  {
+   "name": "Jaap Stam",
+   "number": 31,
+   "x": 79.8,
+   "y": 46.9,
+   "position": "CB"
+  },
+  {
+   "name": "Andrea Pirlo",
+   "number": 21,
+   "x": 61.9,
+   "y": 41.1,
+   "position": "CDM"
+  },
+  {
+   "name": "Gennaro Gattuso",
+   "number": 8,
+   "x": 63.5,
+   "y": 26.4,
+   "position": "CM"
+  },
+  {
+   "name": "Andriy Shevchenko",
+   "number": 7,
+   "x": 26.1,
+   "y": 39.9,
+   "position": "ST"
+  },
+  {
+   "name": "Kaká",
+   "number": 22,
+   "x": 49.9,
+   "y": 39.5,
+   "position": "CAM"
+  },
+  {
+   "name": "Dida",
+   "number": 1,
+   "x": 114.0,
+   "y": 41.6,
+   "position": "GK"
+  },
+  {
+   "name": "Hernán Crespo",
+   "number": 11,
+   "x": 45.4,
+   "y": 42.2,
+   "position": "ST"
+  },
+  {
+   "name": "Cafu",
+   "number": 2,
+   "x": 65.7,
+   "y": 11.1,
+   "position": "RB"
+  }
+ ],
+ "passes": [
+  {
+   "passer": 5,
+   "receiver": 7,
+   "success": true,
+   "x": 61.0,
+   "y": 40.1,
+   "end_x": 59.7,
+   "end_y": 39.8
+  },
+  {
+   "passer": 7,
+   "receiver": 8,
+   "success": true,
+   "x": 59.4,
+   "y": 40.0,
+   "end_x": 53.6,
+   "end_y": 43.2
+  },
+  {
+   "passer": 8,
+   "receiver": 21,
+   "success": true,
+   "x": 53.1,
+   "y": 43.9,
+   "end_x": 44.6,
+   "end_y": 12.1
+  },
+  {
+   "passer": 21,
+   "receiver": 5,
+   "success": false,
+   "x": 44.6,
+   "y": 12.1,
+   "end_x": 75.7,
+   "end_y": 25.5
+  },
+  {
+   "passer": 5,
+   "receiver": 7,
+   "success": true,
+   "x": 61.0,
+   "y": 40.1,
+   "end_x": 53.6,
+   "end_y": 39.1
+  },
+  {
+   "passer": 7,
+   "receiver": 4,
+   "success": true,
+   "x": 44.6,
+   "y": 36.1,
+   "end_x": 31.3,
+   "end_y": 31.5
+  },
+  {
+   "passer": 4,
+   "receiver": 21,
+   "success": true,
+   "x": 31.3,
+   "y": 31.3,
+   "end_x": 31.5,
+   "end_y": 17.9
+  },
+  {
+   "passer": 21,
+   "receiver": 8,
+   "success": true,
+   "x": 35.9,
+   "y": 13.1,
+   "end_x": 34.4,
+   "end_y": 33.7
+  },
+  {
+   "passer": 8,
+   "receiver": 10,
+   "success": false,
+   "x": 36.1,
+   "y": 42.0,
+   "end_x": 80.6,
+   "end_y": 59.5
+  },
+  {
+   "passer": 3,
+   "receiver": 14,
+   "success": true,
+   "x": 73.3,
+   "y": 80.0,
+   "end_x": 76.5,
+   "end_y": 73.1
+  },
+  {
+   "passer": 14,
+   "receiver": 3,
+   "success": true,
+   "x": 68.4,
+   "y": 79.2,
+   "end_x": 62.9,
+   "end_y": 79.2
+  },
+  {
+   "passer": 3,
+   "receiver": 7,
+   "success": true,
+   "x": 63.8,
+   "y": 79.2,
+   "end_x": 79.9,
+   "end_y": 78.7
+  },
+  {
+   "passer": 7,
+   "receiver": 3,
+   "success": true,
+   "x": 77.7,
+   "y": 79.4,
+   "end_x": 78.9,
+   "end_y": 71.9
+  },
+  {
+   "passer": 3,
+   "receiver": 7,
+   "success": true,
+   "x": 98.6,
+   "y": 80.0,
+   "end_x": 114.9,
+   "end_y": 70.9
+  },
+  {
+   "passer": 3,
+   "receiver": 14,
+   "success": true,
+   "x": 113.9,
+   "y": 80.0,
+   "end_x": 90.3,
+   "end_y": 76.3
+  },
+  {
+   "passer": 14,
+   "receiver": 3,
+   "success": true,
+   "x": 90.3,
+   "y": 76.3,
+   "end_x": 100.5,
+   "end_y": 79.4
+  },
+  {
+   "passer": 3,
+   "receiver": 14,
+   "success": true,
+   "x": 98.1,
+   "y": 79.2,
+   "end_x": 93.2,
+   "end_y": 73.1
+  },
+  {
+   "passer": 14,
+   "receiver": 3,
+   "success": true,
+   "x": 94.7,
+   "y": 68.6,
+   "end_x": 98.3,
+   "end_y": 78.9
+  },
+  {
+   "passer": 3,
+   "receiver": 23,
+   "success": true,
+   "x": 98.3,
+   "y": 78.9,
+   "end_x": 75.7,
+   "end_y": 72.0
+  },
+  {
+   "passer": 23,
+   "receiver": 8,
+   "success": true,
+   "x": 75.7,
+   "y": 72.0,
+   "end_x": 73.6,
+   "end_y": 61.8
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 72.6,
+   "y": 65.0,
+   "end_x": 83.3,
+   "end_y": 77.9
+  },
+  {
+   "passer": 3,
+   "receiver": 7,
+   "success": true,
+   "x": 83.3,
+   "y": 77.9,
+   "end_x": 90.9,
+   "end_y": 65.4
+  },
+  {
+   "passer": 7,
+   "receiver": 23,
+   "success": true,
+   "x": 84.7,
+   "y": 66.4,
+   "end_x": 62.8,
+   "end_y": 57.2
+  },
+  {
+   "passer": 23,
+   "receiver": 21,
+   "success": true,
+   "x": 67.0,
+   "y": 58.2,
+   "end_x": 87.5,
+   "end_y": 23.9
+  },
+  {
+   "passer": 10,
+   "receiver": 3,
+   "success": true,
+   "x": 77.3,
+   "y": 80.0,
+   "end_x": 75.9,
+   "end_y": 70.6
+  },
+  {
+   "passer": 3,
+   "receiver": 5,
+   "success": true,
+   "x": 84.3,
+   "y": 65.2,
+   "end_x": 100.9,
+   "end_y": 59.0
+  },
+  {
+   "passer": 8,
+   "receiver": 6,
+   "success": true,
+   "x": 120.0,
+   "y": 80.0,
+   "end_x": 99.5,
+   "end_y": 31.5
+  },
+  {
+   "passer": 21,
+   "receiver": 3,
+   "success": true,
+   "x": 70.2,
+   "y": 65.0,
+   "end_x": 86.3,
+   "end_y": 77.3
+  },
+  {
+   "passer": 3,
+   "receiver": 4,
+   "success": true,
+   "x": 90.7,
+   "y": 79.5,
+   "end_x": 106.2,
+   "end_y": 44.7
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 47.8,
+   "y": 15.6,
+   "end_x": 43.9,
+   "end_y": 77.5
+  },
+  {
+   "passer": 3,
+   "receiver": 10,
+   "success": false,
+   "x": 55.4,
+   "y": 75.4,
+   "end_x": 62.2,
+   "end_y": 71.2
+  },
+  {
+   "passer": 23,
+   "receiver": 21,
+   "success": true,
+   "x": 44.1,
+   "y": 32.7,
+   "end_x": 39.9,
+   "end_y": 21.9
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 39.9,
+   "y": 21.9,
+   "end_x": 63.4,
+   "end_y": 9.6
+  },
+  {
+   "passer": 1,
+   "receiver": 6,
+   "success": true,
+   "x": 9.8,
+   "y": 43.9,
+   "end_x": 48.0,
+   "end_y": 11.8
+  },
+  {
+   "passer": 14,
+   "receiver": 5,
+   "success": true,
+   "x": 70.8,
+   "y": 77.9,
+   "end_x": 89.3,
+   "end_y": 62.6
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 89.7,
+   "y": 53.0,
+   "end_x": 93.1,
+   "end_y": 54.8
+  },
+  {
+   "passer": 14,
+   "receiver": 8,
+   "success": true,
+   "x": 93.1,
+   "y": 54.8,
+   "end_x": 91.7,
+   "end_y": 54.6
+  },
+  {
+   "passer": 8,
+   "receiver": 7,
+   "success": false,
+   "x": 91.7,
+   "y": 54.6,
+   "end_x": 120,
+   "end_y": 22.1
+  },
+  {
+   "passer": 7,
+   "receiver": 8,
+   "success": false,
+   "x": 36.5,
+   "y": 66.2,
+   "end_x": 44.5,
+   "end_y": 58.6
+  },
+  {
+   "passer": 23,
+   "receiver": 8,
+   "success": true,
+   "x": 48.8,
+   "y": 49.0,
+   "end_x": 56.4,
+   "end_y": 38.9
+  },
+  {
+   "passer": 8,
+   "receiver": 21,
+   "success": true,
+   "x": 56.6,
+   "y": 38.9,
+   "end_x": 57.6,
+   "end_y": 21.5
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 62.0,
+   "y": 20.0,
+   "end_x": 74.0,
+   "end_y": 3.8
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": false,
+   "x": 76.5,
+   "y": 4.4,
+   "end_x": 102.7,
+   "end_y": 34.5
+  },
+  {
+   "passer": 21,
+   "receiver": 5,
+   "success": true,
+   "x": 43.1,
+   "y": 0.1,
+   "end_x": 98.7,
+   "end_y": 20.0
+  },
+  {
+   "passer": 5,
+   "receiver": 7,
+   "success": true,
+   "x": 98.7,
+   "y": 31.5,
+   "end_x": 103.8,
+   "end_y": 36.1
+  },
+  {
+   "passer": 7,
+   "receiver": 5,
+   "success": true,
+   "x": 101.5,
+   "y": 30.9,
+   "end_x": 93.5,
+   "end_y": 36.1
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 15.4,
+   "y": 28.7,
+   "end_x": 30.7,
+   "end_y": 18.6
+  },
+  {
+   "passer": 4,
+   "receiver": 5,
+   "success": false,
+   "x": 43.5,
+   "y": 7.2,
+   "end_x": 84.7,
+   "end_y": 0.8
+  },
+  {
+   "passer": 4,
+   "receiver": 8,
+   "success": true,
+   "x": 45.9,
+   "y": 6.0,
+   "end_x": 63.0,
+   "end_y": 20.4
+  },
+  {
+   "passer": 1,
+   "receiver": 3,
+   "success": true,
+   "x": 10.0,
+   "y": 38.7,
+   "end_x": 20.7,
+   "end_y": 64.2
+  },
+  {
+   "passer": 3,
+   "receiver": 10,
+   "success": true,
+   "x": 25.7,
+   "y": 65.2,
+   "end_x": 50.4,
+   "end_y": 60.6
+  },
+  {
+   "passer": 1,
+   "receiver": 6,
+   "success": true,
+   "x": 7.0,
+   "y": 44.1,
+   "end_x": 69.4,
+   "end_y": 26.1
+  },
+  {
+   "passer": 6,
+   "receiver": 7,
+   "success": true,
+   "x": 69.2,
+   "y": 25.9,
+   "end_x": 78.5,
+   "end_y": 46.9
+  },
+  {
+   "passer": 7,
+   "receiver": 5,
+   "success": false,
+   "x": 78.5,
+   "y": 46.9,
+   "end_x": 99.9,
+   "end_y": 20.7
+  },
+  {
+   "passer": 4,
+   "receiver": 21,
+   "success": true,
+   "x": 47.6,
+   "y": 29.7,
+   "end_x": 52.0,
+   "end_y": 10.4
+  },
+  {
+   "passer": 21,
+   "receiver": 5,
+   "success": false,
+   "x": 56.6,
+   "y": 9.0,
+   "end_x": 85.3,
+   "end_y": 0.2
+  },
+  {
+   "passer": 10,
+   "receiver": 8,
+   "success": true,
+   "x": 65.0,
+   "y": 25.5,
+   "end_x": 62.4,
+   "end_y": 20.7
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 62.0,
+   "y": 22.3,
+   "end_x": 57.0,
+   "end_y": 31.5
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": true,
+   "x": 57.2,
+   "y": 32.3,
+   "end_x": 69.6,
+   "end_y": 27.3
+  },
+  {
+   "passer": 10,
+   "receiver": 6,
+   "success": true,
+   "x": 64.8,
+   "y": 21.7,
+   "end_x": 80.7,
+   "end_y": 8.8
+  },
+  {
+   "passer": 6,
+   "receiver": 7,
+   "success": true,
+   "x": 89.1,
+   "y": 8.2,
+   "end_x": 111.6,
+   "end_y": 24.5
+  },
+  {
+   "passer": 6,
+   "receiver": 14,
+   "success": true,
+   "x": 113.2,
+   "y": 0.1,
+   "end_x": 89.1,
+   "end_y": 10.4
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 91.9,
+   "y": 11.4,
+   "end_x": 107.0,
+   "end_y": 4.6
+  },
+  {
+   "passer": 14,
+   "receiver": 7,
+   "success": false,
+   "x": 51.4,
+   "y": 34.3,
+   "end_x": 63.0,
+   "end_y": 38.1
+  },
+  {
+   "passer": 23,
+   "receiver": 8,
+   "success": true,
+   "x": 35.9,
+   "y": 56.2,
+   "end_x": 45.3,
+   "end_y": 67.6
+  },
+  {
+   "passer": 8,
+   "receiver": 23,
+   "success": true,
+   "x": 45.3,
+   "y": 63.6,
+   "end_x": 14.8,
+   "end_y": 62.8
+  },
+  {
+   "passer": 23,
+   "receiver": 4,
+   "success": true,
+   "x": 12.6,
+   "y": 59.6,
+   "end_x": 20.5,
+   "end_y": 38.5
+  },
+  {
+   "passer": 4,
+   "receiver": 3,
+   "success": true,
+   "x": 30.9,
+   "y": 35.7,
+   "end_x": 38.3,
+   "end_y": 76.4
+  },
+  {
+   "passer": 3,
+   "receiver": 23,
+   "success": true,
+   "x": 51.0,
+   "y": 77.0,
+   "end_x": 38.5,
+   "end_y": 59.0
+  },
+  {
+   "passer": 23,
+   "receiver": 14,
+   "success": true,
+   "x": 38.5,
+   "y": 59.0,
+   "end_x": 52.0,
+   "end_y": 38.9
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 53.2,
+   "y": 39.7,
+   "end_x": 53.2,
+   "end_y": 9.0
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 58.8,
+   "y": 9.2,
+   "end_x": 74.4,
+   "end_y": 5.8
+  },
+  {
+   "passer": 6,
+   "receiver": 21,
+   "success": true,
+   "x": 75.1,
+   "y": 3.8,
+   "end_x": 60.6,
+   "end_y": 5.0
+  },
+  {
+   "passer": 21,
+   "receiver": 4,
+   "success": true,
+   "x": 58.4,
+   "y": 5.6,
+   "end_x": 44.1,
+   "end_y": 16.0
+  },
+  {
+   "passer": 4,
+   "receiver": 8,
+   "success": true,
+   "x": 43.9,
+   "y": 23.7,
+   "end_x": 57.4,
+   "end_y": 35.3
+  },
+  {
+   "passer": 8,
+   "receiver": 23,
+   "success": true,
+   "x": 56.8,
+   "y": 35.7,
+   "end_x": 34.3,
+   "end_y": 48.1
+  },
+  {
+   "passer": 23,
+   "receiver": 3,
+   "success": true,
+   "x": 34.3,
+   "y": 48.3,
+   "end_x": 59.8,
+   "end_y": 74.6
+  },
+  {
+   "passer": 3,
+   "receiver": 8,
+   "success": true,
+   "x": 79.5,
+   "y": 74.6,
+   "end_x": 69.6,
+   "end_y": 70.8
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 69.6,
+   "y": 70.8,
+   "end_x": 72.2,
+   "end_y": 47.5
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 75.9,
+   "y": 50.2,
+   "end_x": 91.1,
+   "end_y": 18.6
+  },
+  {
+   "passer": 6,
+   "receiver": 7,
+   "success": false,
+   "x": 91.3,
+   "y": 19.4,
+   "end_x": 113.8,
+   "end_y": 78.9
+  },
+  {
+   "passer": 1,
+   "receiver": 21,
+   "success": true,
+   "x": 7.0,
+   "y": 44.1,
+   "end_x": 22.9,
+   "end_y": 14.8
+  },
+  {
+   "passer": 21,
+   "receiver": 14,
+   "success": true,
+   "x": 23.1,
+   "y": 10.4,
+   "end_x": 30.7,
+   "end_y": 29.7
+  },
+  {
+   "passer": 14,
+   "receiver": 7,
+   "success": false,
+   "x": 30.7,
+   "y": 29.7,
+   "end_x": 58.0,
+   "end_y": 17.2
+  },
+  {
+   "passer": 21,
+   "receiver": 10,
+   "success": true,
+   "x": 56.4,
+   "y": 0.1,
+   "end_x": 71.6,
+   "end_y": 11.2
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 77.5,
+   "y": 5.0,
+   "end_x": 86.3,
+   "end_y": 13.8
+  },
+  {
+   "passer": 1,
+   "receiver": 7,
+   "success": false,
+   "x": 7.0,
+   "y": 36.1,
+   "end_x": 74.4,
+   "end_y": 27.5
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 75.1,
+   "y": 27.7,
+   "end_x": 77.3,
+   "end_y": 18.4
+  },
+  {
+   "passer": 21,
+   "receiver": 14,
+   "success": true,
+   "x": 77.3,
+   "y": 18.4,
+   "end_x": 73.8,
+   "end_y": 25.3
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": false,
+   "x": 72.8,
+   "y": 28.7,
+   "end_x": 106.0,
+   "end_y": 43.9
+  },
+  {
+   "passer": 3,
+   "receiver": 5,
+   "success": true,
+   "x": 7.0,
+   "y": 80.0,
+   "end_x": 44.1,
+   "end_y": 75.8
+  },
+  {
+   "passer": 3,
+   "receiver": 14,
+   "success": true,
+   "x": 48.8,
+   "y": 75.0,
+   "end_x": 52.6,
+   "end_y": 59.4
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 56.4,
+   "y": 59.0,
+   "end_x": 58.4,
+   "end_y": 9.6
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 67.4,
+   "y": 10.0,
+   "end_x": 78.7,
+   "end_y": 4.0
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 78.7,
+   "y": 4.0,
+   "end_x": 82.9,
+   "end_y": 13.2
+  },
+  {
+   "passer": 8,
+   "receiver": 7,
+   "success": true,
+   "x": 91.1,
+   "y": 10.4,
+   "end_x": 98.7,
+   "end_y": 15.4
+  },
+  {
+   "passer": 7,
+   "receiver": 6,
+   "success": true,
+   "x": 98.9,
+   "y": 14.0,
+   "end_x": 90.7,
+   "end_y": 5.8
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": false,
+   "x": 92.7,
+   "y": 4.8,
+   "end_x": 105.8,
+   "end_y": 80
+  },
+  {
+   "passer": 4,
+   "receiver": 1,
+   "success": true,
+   "x": 34.3,
+   "y": 9.4,
+   "end_x": 11.8,
+   "end_y": 31.7
+  },
+  {
+   "passer": 21,
+   "receiver": 14,
+   "success": true,
+   "x": 35.5,
+   "y": 18.2,
+   "end_x": 42.9,
+   "end_y": 29.1
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": true,
+   "x": 48.2,
+   "y": 31.1,
+   "end_x": 66.0,
+   "end_y": 47.7
+  },
+  {
+   "passer": 10,
+   "receiver": 6,
+   "success": true,
+   "x": 68.2,
+   "y": 38.7,
+   "end_x": 87.1,
+   "end_y": 12.4
+  },
+  {
+   "passer": 6,
+   "receiver": 7,
+   "success": false,
+   "x": 87.1,
+   "y": 12.4,
+   "end_x": 98.7,
+   "end_y": 20.9
+  },
+  {
+   "passer": 4,
+   "receiver": 6,
+   "success": false,
+   "x": 63.0,
+   "y": 3.4,
+   "end_x": 66.2,
+   "end_y": 4.0
+  },
+  {
+   "passer": 21,
+   "receiver": 5,
+   "success": false,
+   "x": 77.7,
+   "y": 0.1,
+   "end_x": 94.1,
+   "end_y": 12.4
+  },
+  {
+   "passer": 1,
+   "receiver": 21,
+   "success": true,
+   "x": 7.0,
+   "y": 44.1,
+   "end_x": 51.4,
+   "end_y": 11.8
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 51.4,
+   "y": 11.8,
+   "end_x": 65.0,
+   "end_y": 10.6
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": false,
+   "x": 64.0,
+   "y": 10.4,
+   "end_x": 78.3,
+   "end_y": 20.9
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": true,
+   "x": 57.2,
+   "y": 30.1,
+   "end_x": 70.4,
+   "end_y": 23.1
+  },
+  {
+   "passer": 10,
+   "receiver": 8,
+   "success": true,
+   "x": 70.2,
+   "y": 23.1,
+   "end_x": 79.7,
+   "end_y": 26.9
+  },
+  {
+   "passer": 8,
+   "receiver": 10,
+   "success": true,
+   "x": 79.7,
+   "y": 26.9,
+   "end_x": 73.0,
+   "end_y": 29.3
+  },
+  {
+   "passer": 10,
+   "receiver": 8,
+   "success": false,
+   "x": 84.1,
+   "y": 26.7,
+   "end_x": 86.3,
+   "end_y": 26.7
+  },
+  {
+   "passer": 23,
+   "receiver": 4,
+   "success": true,
+   "x": 41.9,
+   "y": 25.9,
+   "end_x": 38.1,
+   "end_y": 17.6
+  },
+  {
+   "passer": 4,
+   "receiver": 10,
+   "success": true,
+   "x": 41.9,
+   "y": 17.0,
+   "end_x": 71.0,
+   "end_y": 12.8
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 71.0,
+   "y": 12.8,
+   "end_x": 98.9,
+   "end_y": 24.1
+  },
+  {
+   "passer": 21,
+   "receiver": 10,
+   "success": false,
+   "x": 14.0,
+   "y": 0.1,
+   "end_x": 49.6,
+   "end_y": 5.8
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 50.4,
+   "y": 65.2,
+   "end_x": 63.4,
+   "end_y": 29.5
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": false,
+   "x": 69.4,
+   "y": 28.3,
+   "end_x": 108.6,
+   "end_y": 58.2
+  },
+  {
+   "passer": 23,
+   "receiver": 5,
+   "success": false,
+   "x": 32.9,
+   "y": 66.4,
+   "end_x": 69.8,
+   "end_y": 72.4
+  },
+  {
+   "passer": 4,
+   "receiver": 14,
+   "success": true,
+   "x": 37.3,
+   "y": 32.3,
+   "end_x": 53.8,
+   "end_y": 44.7
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 71.8,
+   "y": 59.2,
+   "end_x": 103.0,
+   "end_y": 36.1
+  },
+  {
+   "passer": 6,
+   "receiver": 21,
+   "success": true,
+   "x": 59.2,
+   "y": 9.0,
+   "end_x": 50.0,
+   "end_y": 8.2
+  },
+  {
+   "passer": 21,
+   "receiver": 8,
+   "success": true,
+   "x": 50.0,
+   "y": 8.2,
+   "end_x": 54.6,
+   "end_y": 17.2
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 54.6,
+   "y": 17.2,
+   "end_x": 63.4,
+   "end_y": 7.0
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 63.4,
+   "y": 7.0,
+   "end_x": 63.4,
+   "end_y": 7.0
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 63.4,
+   "y": 7.0,
+   "end_x": 55.2,
+   "end_y": 16.2
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 57.6,
+   "y": 27.1,
+   "end_x": 51.2,
+   "end_y": 72.4
+  },
+  {
+   "passer": 5,
+   "receiver": 8,
+   "success": true,
+   "x": 91.7,
+   "y": 63.2,
+   "end_x": 65.0,
+   "end_y": 70.4
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 64.8,
+   "y": 70.4,
+   "end_x": 64.2,
+   "end_y": 78.9
+  },
+  {
+   "passer": 3,
+   "receiver": 5,
+   "success": true,
+   "x": 71.2,
+   "y": 78.1,
+   "end_x": 98.9,
+   "end_y": 78.1
+  },
+  {
+   "passer": 4,
+   "receiver": 8,
+   "success": true,
+   "x": 36.1,
+   "y": 25.3,
+   "end_x": 49.2,
+   "end_y": 27.1
+  },
+  {
+   "passer": 8,
+   "receiver": 21,
+   "success": true,
+   "x": 46.3,
+   "y": 23.7,
+   "end_x": 45.5,
+   "end_y": 8.2
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 45.5,
+   "y": 8.2,
+   "end_x": 57.8,
+   "end_y": 4.0
+  },
+  {
+   "passer": 6,
+   "receiver": 14,
+   "success": true,
+   "x": 57.8,
+   "y": 4.0,
+   "end_x": 55.4,
+   "end_y": 17.4
+  },
+  {
+   "passer": 10,
+   "receiver": 6,
+   "success": true,
+   "x": 82.3,
+   "y": 27.3,
+   "end_x": 92.3,
+   "end_y": 3.8
+  },
+  {
+   "passer": 6,
+   "receiver": 10,
+   "success": true,
+   "x": 92.3,
+   "y": 3.8,
+   "end_x": 90.7,
+   "end_y": 19.8
+  },
+  {
+   "passer": 1,
+   "receiver": 14,
+   "success": true,
+   "x": 11.8,
+   "y": 51.6,
+   "end_x": 37.1,
+   "end_y": 31.1
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 62.0,
+   "y": 29.1,
+   "end_x": 78.7,
+   "end_y": 4.6
+  },
+  {
+   "passer": 6,
+   "receiver": 14,
+   "success": true,
+   "x": 82.5,
+   "y": 6.0,
+   "end_x": 73.0,
+   "end_y": 22.3
+  },
+  {
+   "passer": 14,
+   "receiver": 8,
+   "success": true,
+   "x": 73.0,
+   "y": 22.3,
+   "end_x": 76.5,
+   "end_y": 51.8
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 75.3,
+   "y": 55.0,
+   "end_x": 86.1,
+   "end_y": 74.8
+  },
+  {
+   "passer": 3,
+   "receiver": 10,
+   "success": true,
+   "x": 89.9,
+   "y": 75.4,
+   "end_x": 107.8,
+   "end_y": 31.7
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 25.9,
+   "y": 0.1,
+   "end_x": 49.2,
+   "end_y": 5.8
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": true,
+   "x": 49.2,
+   "y": 5.8,
+   "end_x": 61.4,
+   "end_y": 8.6
+  },
+  {
+   "passer": 3,
+   "receiver": 8,
+   "success": true,
+   "x": 46.8,
+   "y": 73.6,
+   "end_x": 51.8,
+   "end_y": 65.2
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 51.4,
+   "y": 57.0,
+   "end_x": 64.2,
+   "end_y": 31.9
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": false,
+   "x": 62.0,
+   "y": 15.2,
+   "end_x": 79.9,
+   "end_y": 4.2
+  },
+  {
+   "passer": 14,
+   "receiver": 4,
+   "success": true,
+   "x": 58.0,
+   "y": 51.8,
+   "end_x": 46.3,
+   "end_y": 45.5
+  },
+  {
+   "passer": 4,
+   "receiver": 6,
+   "success": true,
+   "x": 46.4,
+   "y": 46.1,
+   "end_x": 57.4,
+   "end_y": 22.1
+  },
+  {
+   "passer": 6,
+   "receiver": 21,
+   "success": true,
+   "x": 60.2,
+   "y": 8.2,
+   "end_x": 40.1,
+   "end_y": 15.8
+  },
+  {
+   "passer": 21,
+   "receiver": 4,
+   "success": true,
+   "x": 38.7,
+   "y": 15.8,
+   "end_x": 27.3,
+   "end_y": 30.1
+  },
+  {
+   "passer": 4,
+   "receiver": 6,
+   "success": false,
+   "x": 47.2,
+   "y": 32.7,
+   "end_x": 108.0,
+   "end_y": 15.8
+  },
+  {
+   "passer": 8,
+   "receiver": 10,
+   "success": true,
+   "x": 86.3,
+   "y": 50.2,
+   "end_x": 97.7,
+   "end_y": 29.7
+  },
+  {
+   "passer": 8,
+   "receiver": 4,
+   "success": true,
+   "x": 55.6,
+   "y": 39.9,
+   "end_x": 42.1,
+   "end_y": 25.5
+  },
+  {
+   "passer": 4,
+   "receiver": 5,
+   "success": true,
+   "x": 48.8,
+   "y": 23.7,
+   "end_x": 92.5,
+   "end_y": 21.3
+  },
+  {
+   "passer": 3,
+   "receiver": 23,
+   "success": true,
+   "x": 50.8,
+   "y": 78.5,
+   "end_x": 21.7,
+   "end_y": 63.6
+  },
+  {
+   "passer": 23,
+   "receiver": 1,
+   "success": true,
+   "x": 21.7,
+   "y": 63.6,
+   "end_x": 9.4,
+   "end_y": 50.2
+  },
+  {
+   "passer": 1,
+   "receiver": 21,
+   "success": false,
+   "x": 11.2,
+   "y": 49.6,
+   "end_x": 46.3,
+   "end_y": 0.2
+  },
+  {
+   "passer": 3,
+   "receiver": 5,
+   "success": false,
+   "x": 50.2,
+   "y": 75.2,
+   "end_x": 65.8,
+   "end_y": 72.4
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 51.8,
+   "y": 57.0,
+   "end_x": 34.7,
+   "end_y": 69.8
+  },
+  {
+   "passer": 3,
+   "receiver": 23,
+   "success": true,
+   "x": 34.7,
+   "y": 72.2,
+   "end_x": 29.9,
+   "end_y": 60.8
+  },
+  {
+   "passer": 23,
+   "receiver": 14,
+   "success": true,
+   "x": 29.9,
+   "y": 60.8,
+   "end_x": 43.3,
+   "end_y": 29.9
+  },
+  {
+   "passer": 14,
+   "receiver": 4,
+   "success": true,
+   "x": 43.3,
+   "y": 29.9,
+   "end_x": 24.9,
+   "end_y": 31.7
+  },
+  {
+   "passer": 4,
+   "receiver": 21,
+   "success": true,
+   "x": 25.1,
+   "y": 31.9,
+   "end_x": 38.1,
+   "end_y": 10.0
+  },
+  {
+   "passer": 21,
+   "receiver": 5,
+   "success": false,
+   "x": 44.3,
+   "y": 9.4,
+   "end_x": 104.4,
+   "end_y": 15.8
+  },
+  {
+   "passer": 21,
+   "receiver": 14,
+   "success": false,
+   "x": 43.7,
+   "y": 27.5,
+   "end_x": 57.0,
+   "end_y": 37.9
+  },
+  {
+   "passer": 4,
+   "receiver": 3,
+   "success": true,
+   "x": 26.1,
+   "y": 47.7,
+   "end_x": 30.9,
+   "end_y": 62.0
+  },
+  {
+   "passer": 8,
+   "receiver": 6,
+   "success": true,
+   "x": 76.7,
+   "y": 67.8,
+   "end_x": 105.8,
+   "end_y": 18.4
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": true,
+   "x": 106.2,
+   "y": 19.0,
+   "end_x": 109.0,
+   "end_y": 31.9
+  },
+  {
+   "passer": 5,
+   "receiver": 10,
+   "success": true,
+   "x": 109.0,
+   "y": 31.9,
+   "end_x": 101.7,
+   "end_y": 37.7
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 39.3,
+   "y": 52.8,
+   "end_x": 47.8,
+   "end_y": 42.9
+  },
+  {
+   "passer": 14,
+   "receiver": 5,
+   "success": false,
+   "x": 53.8,
+   "y": 45.1,
+   "end_x": 78.9,
+   "end_y": 36.3
+  },
+  {
+   "passer": 5,
+   "receiver": 8,
+   "success": true,
+   "x": 59.8,
+   "y": 40.1,
+   "end_x": 55.0,
+   "end_y": 42.7
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 55.2,
+   "y": 42.7,
+   "end_x": 53.0,
+   "end_y": 73.4
+  },
+  {
+   "passer": 14,
+   "receiver": 8,
+   "success": true,
+   "x": 64.6,
+   "y": 42.9,
+   "end_x": 78.5,
+   "end_y": 50.6
+  },
+  {
+   "passer": 3,
+   "receiver": 14,
+   "success": true,
+   "x": 80.3,
+   "y": 69.4,
+   "end_x": 79.5,
+   "end_y": 58.2
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 81.1,
+   "y": 59.0,
+   "end_x": 99.5,
+   "end_y": 15.0
+  },
+  {
+   "passer": 1,
+   "receiver": 14,
+   "success": true,
+   "x": 14.4,
+   "y": 19.2,
+   "end_x": 42.7,
+   "end_y": 13.8
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 43.3,
+   "y": 13.6,
+   "end_x": 66.2,
+   "end_y": 6.2
+  },
+  {
+   "passer": 6,
+   "receiver": 10,
+   "success": false,
+   "x": 64.2,
+   "y": 3.8,
+   "end_x": 66.4,
+   "end_y": 7.0
+  },
+  {
+   "passer": 6,
+   "receiver": 21,
+   "success": true,
+   "x": 70.6,
+   "y": 0.1,
+   "end_x": 57.4,
+   "end_y": 4.8
+  },
+  {
+   "passer": 21,
+   "receiver": 4,
+   "success": true,
+   "x": 56.9,
+   "y": 4.1,
+   "end_x": 41.1,
+   "end_y": 14.2
+  },
+  {
+   "passer": 4,
+   "receiver": 14,
+   "success": true,
+   "x": 46.4,
+   "y": 19.0,
+   "end_x": 57.0,
+   "end_y": 31.3
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 56.9,
+   "y": 28.3,
+   "end_x": 66.8,
+   "end_y": 7.0
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": false,
+   "x": 68.8,
+   "y": 6.4,
+   "end_x": 104.8,
+   "end_y": 23.1
+  },
+  {
+   "passer": 4,
+   "receiver": 6,
+   "success": true,
+   "x": 67.4,
+   "y": 20.7,
+   "end_x": 91.9,
+   "end_y": 22.7
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": false,
+   "x": 92.3,
+   "y": 22.4,
+   "end_x": 108.0,
+   "end_y": 48.1
+  },
+  {
+   "passer": 1,
+   "receiver": 21,
+   "success": true,
+   "x": 16.0,
+   "y": 33.9,
+   "end_x": 35.9,
+   "end_y": 20.0
+  },
+  {
+   "passer": 21,
+   "receiver": 8,
+   "success": true,
+   "x": 37.3,
+   "y": 19.2,
+   "end_x": 38.1,
+   "end_y": 26.7
+  },
+  {
+   "passer": 8,
+   "receiver": 21,
+   "success": true,
+   "x": 38.1,
+   "y": 26.7,
+   "end_x": 44.5,
+   "end_y": 7.0
+  },
+  {
+   "passer": 21,
+   "receiver": 4,
+   "success": true,
+   "x": 44.3,
+   "y": 7.6,
+   "end_x": 28.5,
+   "end_y": 27.7
+  },
+  {
+   "passer": 4,
+   "receiver": 3,
+   "success": true,
+   "x": 27.1,
+   "y": 30.5,
+   "end_x": 54.6,
+   "end_y": 77.0
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": true,
+   "x": 53.6,
+   "y": 70.0,
+   "end_x": 61.6,
+   "end_y": 65.6
+  },
+  {
+   "passer": 10,
+   "receiver": 8,
+   "success": true,
+   "x": 64.0,
+   "y": 65.6,
+   "end_x": 56.6,
+   "end_y": 48.8
+  },
+  {
+   "passer": 8,
+   "receiver": 6,
+   "success": true,
+   "x": 56.6,
+   "y": 48.5,
+   "end_x": 63.0,
+   "end_y": 26.1
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 70.6,
+   "y": 21.3,
+   "end_x": 64.8,
+   "end_y": 28.3
+  },
+  {
+   "passer": 8,
+   "receiver": 5,
+   "success": false,
+   "x": 64.8,
+   "y": 24.5,
+   "end_x": 85.7,
+   "end_y": 30.7
+  },
+  {
+   "passer": 21,
+   "receiver": 10,
+   "success": true,
+   "x": 56.8,
+   "y": 6.6,
+   "end_x": 75.1,
+   "end_y": 15.4
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 75.1,
+   "y": 15.4,
+   "end_x": 84.3,
+   "end_y": 13.0
+  },
+  {
+   "passer": 8,
+   "receiver": 3,
+   "success": true,
+   "x": 80.9,
+   "y": 78.9,
+   "end_x": 60.0,
+   "end_y": 69.6
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 27.3,
+   "y": 0.1,
+   "end_x": 50.2,
+   "end_y": 3.2
+  },
+  {
+   "passer": 6,
+   "receiver": 5,
+   "success": true,
+   "x": 58.2,
+   "y": 5.8,
+   "end_x": 83.3,
+   "end_y": 7.6
+  },
+  {
+   "passer": 14,
+   "receiver": 4,
+   "success": true,
+   "x": 58.2,
+   "y": 14.0,
+   "end_x": 38.9,
+   "end_y": 25.9
+  },
+  {
+   "passer": 4,
+   "receiver": 14,
+   "success": true,
+   "x": 38.9,
+   "y": 25.9,
+   "end_x": 49.6,
+   "end_y": 22.1
+  },
+  {
+   "passer": 1,
+   "receiver": 10,
+   "success": false,
+   "x": 14.6,
+   "y": 29.5,
+   "end_x": 71.5,
+   "end_y": 15.1
+  },
+  {
+   "passer": 23,
+   "receiver": 4,
+   "success": true,
+   "x": 29.4,
+   "y": 72.2,
+   "end_x": 15.5,
+   "end_y": 53.2
+  },
+  {
+   "passer": 4,
+   "receiver": 21,
+   "success": true,
+   "x": 14.6,
+   "y": 51.7,
+   "end_x": 15.2,
+   "end_y": 26.7
+  },
+  {
+   "passer": 21,
+   "receiver": 14,
+   "success": true,
+   "x": 21.7,
+   "y": 23.5,
+   "end_x": 35.6,
+   "end_y": 25.2
+  },
+  {
+   "passer": 14,
+   "receiver": 5,
+   "success": false,
+   "x": 40.7,
+   "y": 25.8,
+   "end_x": 74.1,
+   "end_y": 20.5
+  },
+  {
+   "passer": 8,
+   "receiver": 10,
+   "success": true,
+   "x": 55.7,
+   "y": 26.9,
+   "end_x": 71.3,
+   "end_y": 39.5
+  },
+  {
+   "passer": 10,
+   "receiver": 8,
+   "success": false,
+   "x": 71.5,
+   "y": 36.5,
+   "end_x": 85.6,
+   "end_y": 21.5
+  },
+  {
+   "passer": 5,
+   "receiver": 8,
+   "success": false,
+   "x": 85.6,
+   "y": 25.0,
+   "end_x": 85.4,
+   "end_y": 19.0
+  },
+  {
+   "passer": 23,
+   "receiver": 1,
+   "success": true,
+   "x": 18.9,
+   "y": 57.5,
+   "end_x": 5.4,
+   "end_y": 44.9
+  },
+  {
+   "passer": 1,
+   "receiver": 4,
+   "success": true,
+   "x": 8.0,
+   "y": 44.4,
+   "end_x": 22.1,
+   "end_y": 50.2
+  },
+  {
+   "passer": 4,
+   "receiver": 23,
+   "success": true,
+   "x": 22.1,
+   "y": 50.2,
+   "end_x": 15.7,
+   "end_y": 69.7
+  },
+  {
+   "passer": 4,
+   "receiver": 14,
+   "success": true,
+   "x": 20.6,
+   "y": 54.3,
+   "end_x": 35.1,
+   "end_y": 48.7
+  },
+  {
+   "passer": 14,
+   "receiver": 8,
+   "success": true,
+   "x": 40.5,
+   "y": 47.2,
+   "end_x": 55.5,
+   "end_y": 44.9
+  },
+  {
+   "passer": 14,
+   "receiver": 21,
+   "success": true,
+   "x": 50.8,
+   "y": 51.9,
+   "end_x": 44.3,
+   "end_y": 32.9
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 49.5,
+   "y": 29.5,
+   "end_x": 71.1,
+   "end_y": 2.7
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 84.3,
+   "y": 6.6,
+   "end_x": 93.5,
+   "end_y": 17.5
+  },
+  {
+   "passer": 8,
+   "receiver": 5,
+   "success": false,
+   "x": 110.2,
+   "y": 14.7,
+   "end_x": 110.0,
+   "end_y": 34.4
+  },
+  {
+   "passer": 6,
+   "receiver": 21,
+   "success": true,
+   "x": 70.0,
+   "y": 1.6,
+   "end_x": 50.8,
+   "end_y": 7.4
+  },
+  {
+   "passer": 21,
+   "receiver": 4,
+   "success": true,
+   "x": 50.1,
+   "y": 8.5,
+   "end_x": 36.4,
+   "end_y": 21.1
+  },
+  {
+   "passer": 4,
+   "receiver": 23,
+   "success": true,
+   "x": 35.6,
+   "y": 23.2,
+   "end_x": 47.3,
+   "end_y": 66.0
+  },
+  {
+   "passer": 23,
+   "receiver": 5,
+   "success": true,
+   "x": 69.8,
+   "y": 65.4,
+   "end_x": 86.9,
+   "end_y": 68.0
+  },
+  {
+   "passer": 5,
+   "receiver": 23,
+   "success": true,
+   "x": 86.7,
+   "y": 68.0,
+   "end_x": 82.8,
+   "end_y": 68.4
+  },
+  {
+   "passer": 23,
+   "receiver": 4,
+   "success": true,
+   "x": 85.4,
+   "y": 80.0,
+   "end_x": 57.2,
+   "end_y": 70.3
+  },
+  {
+   "passer": 4,
+   "receiver": 21,
+   "success": true,
+   "x": 55.2,
+   "y": 65.0,
+   "end_x": 57.2,
+   "end_y": 45.9
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 26.8,
+   "y": 23.9,
+   "end_x": 23.2,
+   "end_y": 40.1
+  },
+  {
+   "passer": 8,
+   "receiver": 6,
+   "success": true,
+   "x": 24.4,
+   "y": 40.1,
+   "end_x": 42.8,
+   "end_y": 21.8
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 84.6,
+   "y": 1.4,
+   "end_x": 70.4,
+   "end_y": 5.3
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 70.2,
+   "y": 8.5,
+   "end_x": 67.4,
+   "end_y": 31.4
+  },
+  {
+   "passer": 14,
+   "receiver": 6,
+   "success": true,
+   "x": 77.3,
+   "y": 37.8,
+   "end_x": 100.2,
+   "end_y": 5.5
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 99.1,
+   "y": 6.1,
+   "end_x": 108.3,
+   "end_y": 35.7
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 56.7,
+   "y": 4.2,
+   "end_x": 70.0,
+   "end_y": 1.6
+  },
+  {
+   "passer": 6,
+   "receiver": 14,
+   "success": true,
+   "x": 70.9,
+   "y": 1.4,
+   "end_x": 62.7,
+   "end_y": 8.7
+  },
+  {
+   "passer": 21,
+   "receiver": 10,
+   "success": true,
+   "x": 70.9,
+   "y": 25.4,
+   "end_x": 91.2,
+   "end_y": 26.2
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 91.0,
+   "y": 26.5,
+   "end_x": 104.2,
+   "end_y": 33.9
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": true,
+   "x": 71.5,
+   "y": 16.8,
+   "end_x": 88.0,
+   "end_y": 6.1
+  },
+  {
+   "passer": 6,
+   "receiver": 14,
+   "success": true,
+   "x": 97.6,
+   "y": 0.1,
+   "end_x": 90.1,
+   "end_y": 8.9
+  },
+  {
+   "passer": 4,
+   "receiver": 14,
+   "success": true,
+   "x": 34.5,
+   "y": 27.1,
+   "end_x": 42.0,
+   "end_y": 33.7
+  },
+  {
+   "passer": 14,
+   "receiver": 4,
+   "success": true,
+   "x": 42.0,
+   "y": 33.7,
+   "end_x": 36.0,
+   "end_y": 27.3
+  },
+  {
+   "passer": 4,
+   "receiver": 23,
+   "success": true,
+   "x": 36.4,
+   "y": 29.2,
+   "end_x": 37.1,
+   "end_y": 52.8
+  },
+  {
+   "passer": 10,
+   "receiver": 5,
+   "success": false,
+   "x": 84.8,
+   "y": 41.9,
+   "end_x": 100.0,
+   "end_y": 39.7
+  },
+  {
+   "passer": 8,
+   "receiver": 5,
+   "success": false,
+   "x": 85.4,
+   "y": 53.0,
+   "end_x": 105.1,
+   "end_y": 41.6
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 120.0,
+   "y": 80.0,
+   "end_x": 91.0,
+   "end_y": 51.5
+  },
+  {
+   "passer": 10,
+   "receiver": 14,
+   "success": true,
+   "x": 65.7,
+   "y": 35.7,
+   "end_x": 55.5,
+   "end_y": 30.3
+  },
+  {
+   "passer": 14,
+   "receiver": 10,
+   "success": false,
+   "x": 55.5,
+   "y": 30.5,
+   "end_x": 63.8,
+   "end_y": 36.5
+  },
+  {
+   "passer": 6,
+   "receiver": 4,
+   "success": true,
+   "x": 56.5,
+   "y": 0.1,
+   "end_x": 41.3,
+   "end_y": 10.8
+  },
+  {
+   "passer": 4,
+   "receiver": 23,
+   "success": true,
+   "x": 36.4,
+   "y": 22.4,
+   "end_x": 42.6,
+   "end_y": 57.9
+  },
+  {
+   "passer": 23,
+   "receiver": 21,
+   "success": true,
+   "x": 45.4,
+   "y": 54.7,
+   "end_x": 46.7,
+   "end_y": 8.1
+  },
+  {
+   "passer": 21,
+   "receiver": 6,
+   "success": false,
+   "x": 45.8,
+   "y": 6.8,
+   "end_x": 70.4,
+   "end_y": 0.1
+  },
+  {
+   "passer": 23,
+   "receiver": 5,
+   "success": true,
+   "x": 77.7,
+   "y": 51.9,
+   "end_x": 102.7,
+   "end_y": 50.2
+  },
+  {
+   "passer": 5,
+   "receiver": 8,
+   "success": false,
+   "x": 104.0,
+   "y": 50.2,
+   "end_x": 107.7,
+   "end_y": 41.9
+  },
+  {
+   "passer": 14,
+   "receiver": 5,
+   "success": false,
+   "x": 29.6,
+   "y": 37.6,
+   "end_x": 89.9,
+   "end_y": 20.3
+  },
+  {
+   "passer": 8,
+   "receiver": 6,
+   "success": true,
+   "x": 78.3,
+   "y": 33.3,
+   "end_x": 84.8,
+   "end_y": 2.5
+  },
+  {
+   "passer": 6,
+   "receiver": 8,
+   "success": true,
+   "x": 91.2,
+   "y": 1.6,
+   "end_x": 84.3,
+   "end_y": 6.4
+  },
+  {
+   "passer": 8,
+   "receiver": 14,
+   "success": true,
+   "x": 78.1,
+   "y": 8.3,
+   "end_x": 68.3,
+   "end_y": 29.2
+  },
+  {
+   "passer": 14,
+   "receiver": 23,
+   "success": true,
+   "x": 69.4,
+   "y": 54.5,
+   "end_x": 65.5,
+   "end_y": 67.5
+  },
+  {
+   "passer": 23,
+   "receiver": 4,
+   "success": true,
+   "x": 64.2,
+   "y": 64.5,
+   "end_x": 49.9,
+   "end_y": 48.9
+  }
+ ],
+ "ball": {
+  "x": 60,
+  "y": 40
+ },
+ "match_info": {
+  "home_team": "Liverpool",
+  "away_team": "AC Milan",
+  "score_home": 3,
+  "score_away": 3,
+  "minute": 120,
+  "competition": "UEFA Champions League 2004/05 — Final",
+  "date": "2005-05-25"
+ },
+ "source": {
+  "kind": "statsbomb",
+  "match_id": 2302764,
+  "note": "Positions are each starter's median event location; passes are the real events. Data © StatsBomb (open data, non-commercial, attribution required)."
+ }
+}

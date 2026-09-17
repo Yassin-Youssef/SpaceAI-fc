@@ -27,7 +27,7 @@ from api.config import (
 from api.routers import (
     analysis, pass_network, space_control, formation, roles,
     press_resistance, patterns, intelligence, explanation,
-    video, simulation, ask, export, player_assessment
+    video, simulation, ask, export, player_assessment, dataset, demo
 )
 
 # ── Rate limiter ─────────────────────────────────────────────────
@@ -69,18 +69,37 @@ app.include_router(simulation.router)
 app.include_router(ask.router)
 app.include_router(export.router)
 app.include_router(player_assessment.router)
+app.include_router(dataset.router)
+app.include_router(demo.router)
 
 # ── Utility endpoints ─────────────────────────────────────────────
 
 @app.get("/api/health", tags=["Utility"])
 async def health():
     from engine.intelligence.simulation import TACTICAL_PRESETS
+    from api.services.video_service import capabilities as video_caps
+    from api.services.llm_service import llm_provider
+
+    caps = video_caps()
+    try:
+        from engine.intelligence.rl_coach import HAS_GYM, HAS_SB3
+        caps["rl_coach"] = bool(HAS_GYM and HAS_SB3)
+    except Exception:
+        caps["rl_coach"] = False
+    try:
+        import docx  # noqa: F401
+        caps["docx_export"] = True
+    except Exception:
+        caps["docx_export"] = False
+
     return {
         "status": "ok",
         "version": API_VERSION,
         "engine_phases": 4,
         "llm_available": bool(OPENROUTER_API_KEY or ANTHROPIC_API_KEY),
+        "llm_provider": llm_provider(),
         "available_tactics": sorted(TACTICAL_PRESETS.keys()),
+        "capabilities": caps,
     }
 
 
@@ -99,6 +118,8 @@ async def features():
         {"endpoint": "POST /api/reasoning",         "description": "SWOT tactical reasoning",                        "input_types": ["manual", "dataset"]},
         {"endpoint": "POST /api/recommendations",   "description": "Prioritised tactical recommendations",           "input_types": ["manual"]},
         {"endpoint": "POST /api/explanation",       "description": "Natural language tactical report",               "input_types": ["manual"]},
+        {"endpoint": "GET  /api/demo/matches",      "description": "Bundled real-match demo fixtures",               "input_types": ["manual"]},
+        {"endpoint": "POST /api/dataset/upload",    "description": "Upload and parse a CSV/JSON dataset",            "input_types": ["dataset"]},
         {"endpoint": "POST /api/video/upload",      "description": "Upload and analyse video file",                  "input_types": ["video"]},
         {"endpoint": "POST /api/video/youtube",     "description": "Download and analyse YouTube clip",              "input_types": ["video"]},
         {"endpoint": "POST /api/video/track-player","description": "Track individual player from video data",        "input_types": ["video"]},
@@ -117,7 +138,9 @@ async def features():
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal error occurred.", "type": type(exc).__name__},
+        content={"detail": f"Internal error: {exc}", "type": type(exc).__name__},
     )

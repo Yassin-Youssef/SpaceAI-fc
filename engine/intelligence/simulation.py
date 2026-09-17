@@ -154,22 +154,45 @@ class Ball:
         self.possessor = None  # PlayerAgent or None
 
     def update(self, team_a, team_b, pitch_w, pitch_h, rng):
+        """
+        Advance the ball one step.
+
+        Returns an outcome string ('goal', 'save', 'pass', 'turnover',
+        'tackle', 'recovery' or None) so the simulation can log events.
+        """
         if self.possessor:
             p = self.possessor
             self.x, self.y = p.x, p.y
 
+            # Defensive pressure: a nearby opponent can win the ball
+            opponents = team_b if p.team == 'A' else team_a
+            presser = min(opponents, key=lambda o: o.dist_to(self.x, self.y))
+            if presser.dist_to(self.x, self.y) < 1.5 and rng.random() < 0.12:
+                self.possessor = presser
+                return 'tackle'
+
             # Decision: pass, shoot, or dribble
-            if self._should_shoot(p, pitch_w):
-                self._shoot(p, team_a, team_b, pitch_w, pitch_h, rng)
-            elif rng.random() < 0.15:
-                self._pass(p, team_a if p.team == 'A' else team_b, rng, pitch_w, pitch_h)
-            # else dribble (ball follows possessor)
-        else:
-            # Loose ball — nearest player wins
-            all_p = team_a + team_b
-            nearest = min(all_p, key=lambda p: p.dist_to(self.x, self.y))
-            if nearest.dist_to(self.x, self.y) < 2.0:
-                self.possessor = nearest
+            if self._should_shoot(p, pitch_w) and rng.random() < 0.5:
+                return self._shoot(p, team_a, team_b, pitch_w, pitch_h, rng)
+            if rng.random() < 0.15:
+                return self._pass(p, team_a if p.team == 'A' else team_b, rng, pitch_w, pitch_h)
+            return None  # dribble (ball follows possessor)
+
+        # Loose ball — the closest player on each side chases it
+        all_p = team_a + team_b
+        for team in (team_a, team_b):
+            chaser = min(team, key=lambda q: q.dist_to(self.x, self.y))
+            dx, dy = self.x - chaser.x, self.y - chaser.y
+            dist = math.sqrt(dx * dx + dy * dy) + 1e-6
+            step = min(dist, chaser.speed * 0.9)
+            chaser.x = max(0.5, min(pitch_w - 0.5, chaser.x + dx / dist * step))
+            chaser.y = max(0.5, min(pitch_h - 0.5, chaser.y + dy / dist * step))
+
+        nearest = min(all_p, key=lambda q: q.dist_to(self.x, self.y))
+        if nearest.dist_to(self.x, self.y) < 2.0:
+            self.possessor = nearest
+            return 'recovery'
+        return None
 
     def _should_shoot(self, player, pitch_w):
         goal_x = pitch_w if player.team == 'A' else 0
@@ -178,35 +201,40 @@ class Ball:
     def _shoot(self, player, team_a, team_b, pitch_w, pitch_h, rng):
         goal_x = pitch_w if player.team == 'A' else 0
         dist = abs(player.x - goal_x)
-        prob = max(0.02, 0.15 - dist / pitch_w * 0.2)
+        prob = max(0.06, 0.32 - dist / pitch_w * 0.4)
 
         if rng.random() < prob:
             self.possessor = None
             self.x = goal_x
             self.y = pitch_h / 2
             return 'goal'
-        else:
-            # Saved / missed — give to defending GK
-            defenders = team_b if player.team == 'A' else team_a
-            gk = next((p for p in defenders if p.role == 'GK'), defenders[0])
-            self.possessor = gk
-            return 'save'
+        # Saved / missed — give to defending GK
+        defenders = team_b if player.team == 'A' else team_a
+        gk = next((p for p in defenders if p.role == 'GK'), defenders[0])
+        self.possessor = gk
+        return 'save'
 
     def _pass(self, passer, teammates, rng, pitch_w, pitch_h):
         others = [t for t in teammates if t.pid != passer.pid]
         if not others:
             return
-        target = rng.choice(others)
+        # Prefer forward options (attack direction depends on team)
+        attack_dir = 1 if passer.team == 'A' else -1
+        forward = [t for t in others if (t.x - passer.x) * attack_dir > 0]
+        pool = forward if forward and rng.random() < 0.65 else others
+        target = rng.choice(pool)
         success = rng.random() < 0.75
         if success:
             self.possessor = target
             self.x, self.y = target.x, target.y
-        else:
-            self.possessor = None
-            self.x += rng.normal(0, 3)
-            self.y += rng.normal(0, 3)
-            self.x = max(0, min(pitch_w, self.x))
-            self.y = max(0, min(pitch_h, self.y))
+            return 'pass'
+        # Misplaced pass — ball ends up somewhere between passer and target
+        self.possessor = None
+        self.x = (passer.x + target.x) / 2 + rng.normal(0, 3)
+        self.y = (passer.y + target.y) / 2 + rng.normal(0, 3)
+        self.x = max(0.5, min(pitch_w - 0.5, self.x))
+        self.y = max(0.5, min(pitch_h - 0.5, self.y))
+        return 'turnover'
 
 
 # ════════════════════════════════════════════════════════════════
@@ -302,19 +330,29 @@ class TacticalSimulation:
 
             # Update ball
             prev_x = self.ball.x
-            self.ball.update(self.team_a, self.team_b,
-                             self.pitch_w, self.pitch_h, self.rng)
+            actor = self.ball.possessor
+            outcome = self.ball.update(self.team_a, self.team_b,
+                                       self.pitch_w, self.pitch_h, self.rng)
+            if outcome in ('save', 'turnover', 'tackle') and actor is not None:
+                self.events.append({
+                    'step': step, 'type': 'shot_saved' if outcome == 'save' else outcome,
+                    'team': actor.team, 'player': actor.pid, 'role': actor.role,
+                })
 
             # Check for goals
             if self.ball.x >= self.pitch_w - 0.5 and prev_x < self.pitch_w - 0.5:
                 if abs(self.ball.y - self.pitch_h / 2) < self.pitch_h * 0.2:
                     self.goals_a += 1
-                    self.events.append({'step': step, 'type': 'goal', 'team': 'A'})
+                    self.events.append({'step': step, 'type': 'goal', 'team': 'A',
+                                        'player': actor.pid if actor else None,
+                                        'role': actor.role if actor else None})
                     self._reset_positions()
             elif self.ball.x <= 0.5 and prev_x > 0.5:
                 if abs(self.ball.y - self.pitch_h / 2) < self.pitch_h * 0.2:
                     self.goals_b += 1
-                    self.events.append({'step': step, 'type': 'goal', 'team': 'B'})
+                    self.events.append({'step': step, 'type': 'goal', 'team': 'B',
+                                        'player': actor.pid if actor else None,
+                                        'role': actor.role if actor else None})
                     self._reset_positions()
 
             # Record state

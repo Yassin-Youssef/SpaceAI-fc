@@ -117,21 +117,35 @@ class ReasoningRequest(BaseAnalysisRequest):
     pass
 
 
-class RecommendationsRequest(BaseModel):
+class RecommendationsRequest(BaseAnalysisRequest):
+    """
+    Strategy recommendations.  Accepts either:
+      - pre-computed `swot_results` / `analysis_data`, or
+      - raw team positions (manual / video / dataset) from which the SWOT
+        is derived, optionally with a `formation` override and a tactical
+        `situation` (knowledge-graph node name, e.g. "low_block").
+    """
     swot_results: Optional[dict] = None
     analysis_data: Optional[dict] = None
-    team_name: str = "Team A"
-    opponent_name: str = "Team B"
+    formation: Optional[str] = None
+    situation: Optional[str] = None
+    team_name: Optional[str] = None
+    opponent_name: Optional[str] = None
 
 
-class ExplanationRequest(BaseModel):
+class ExplanationRequest(BaseAnalysisRequest):
+    """
+    Natural-language match report.  If team positions are supplied the full
+    analysis pipeline is run first and the report is grounded in its output;
+    otherwise the caller may pass pre-computed report/SWOT/recommendation data.
+    """
     mode: str = Field("template", pattern="^(template|llm)$")
-    match_info: Optional[dict] = None
+    report_match_info: Optional[dict] = None
     report_data: Optional[dict] = None
     swot_results: Optional[dict] = None
     recommendations: Optional[list] = None
-    team_name: str = "Team A"
-    opponent_name: str = "Team B"
+    team_name: Optional[str] = None
+    opponent_name: Optional[str] = None
 
 
 # ── Video requests ────────────────────────────────────────────────
@@ -219,6 +233,8 @@ class PlayerStats(BaseModel):
     aerial_duels: int = 0
     distance_covered: float = 0.0
     sprints: int = 0
+    minutes: Optional[int] = None          # for per-90 normalisation (default 90)
+    carry_distance_m: Optional[float] = None
 
 class PlayerAssessmentRequest(BaseModel):
     name: str = "Unknown"
@@ -227,6 +243,7 @@ class PlayerAssessmentRequest(BaseModel):
     preferred_foot: str = "Right"
     height: str = "180cm"
     weight: str = "75kg"
+    position: Optional[str] = None         # GK/CB/RB/LB/CDM/CM/CAM/RW/LW/ST — prior for the role model
     input_type: str = Field("manual", pattern="^(manual|data|video)$")
     
     # For video mode
@@ -240,11 +257,28 @@ class PlayerAssessmentRequest(BaseModel):
     # For manual mode fallback
     manual_attributes: Optional[dict] = None
 
+    # Optional tracking data from a prior /api/video/upload call
+    tracking_data: Optional[dict] = None
+
 
 # ── Export ───────────────────────────────────────────────────────
 
 class ExportRequest(BaseModel):
-    analysis_data: dict
+    """
+    Word / PDF export.  `analysis_data` is any analysis response the client
+    received (used for SWOT, recommendations and explanation text).  When the
+    original player positions are supplied the report is rebuilt from the
+    engine so it contains pass, space, formation, role and pattern sections.
+    """
+    analysis_data: dict = {}
     match_info: Optional[dict] = None
     team_name: str = "Team A"
     opponent_name: str = "Team B"
+    team_a_color: str = "#00d9ff"
+    team_b_color: str = "#ff4757"
+    team_a: Optional[List[PlayerData]] = None
+    team_b: Optional[List[PlayerData]] = None
+    passes: Optional[List[PassEvent]] = None
+    ball_x: float = Field(60.0, ge=0.0, le=120.0)
+    ball_y: float = Field(40.0, ge=0.0, le=80.0)
+    feature: str = ""

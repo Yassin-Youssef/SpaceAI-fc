@@ -1,290 +1,369 @@
-import { motion } from "motion/react";
-import { User, Play, ArrowLeft, Loader2, Video, Database, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
-import { assessPlayer } from "../../lib/api";
+import { motion, AnimatePresence } from "motion/react";
+import { User, Play, ArrowLeft, Video, Database, SlidersHorizontal, Sparkles, Upload, Youtube, CheckCircle2, AlertTriangle, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import { assessPlayer, uploadVideo, listDemoPlayers } from "../../lib/api";
+import type { HealthResponse, PlayerAssessmentResponse, DemoPlayer } from "../../lib/types";
+import { PresetPicker, type PresetItem } from "./common/PresetPicker";
+import { Page, PageHeader, GlassCard, Button, ResultsSkeleton, StaggerGrid, StaggerItem } from "./common/Primitives";
+import { cn } from "./ui/utils";
+import { springSoft } from "../../lib/motion";
+import { POSITIONS } from "../../lib/demo";
 
-export function PlayerAssessment() {
-  const [showResults, setShowResults] = useState(false);
+type Mode = "video" | "data" | "manual";
+
+const MODES: Array<{ id: Mode; label: string; icon: LucideIcon; blurb: string }> = [
+  { id: "data", label: "Match data", icon: Database, blurb: "Raw counts from a match or season" },
+  { id: "manual", label: "Scout ratings", icon: SlidersHorizontal, blurb: "Rate attributes 0–100 yourself" },
+  { id: "video", label: "Video", icon: Video, blurb: "Track a player from footage" },
+];
+
+const DEMO_PLAYER = { name: "Lamine Yamal", number: "19", age: "18", foot: "Left", height: "180cm", weight: "72kg", position: "RW" };
+const DEMO_STATS = { passes_completed: 45, passes_attempted: 52, tackles: 3, interceptions: 2, shots: 4, dribbles: 7, aerial_duels: 1, distance_covered: 10.5, sprints: 22 };
+const DEMO_MANUAL = { Speed: 88, Acceleration: 92, Stamina: 80, Passing: 85, Dribbling: 94, Shooting: 82 };
+
+export function PlayerAssessment({ health }: { health: HealthResponse | null }) {
+  const [mode, setMode] = useState<Mode>("data");
+  const [view, setView] = useState<"input" | "results">("input");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<PlayerAssessmentResponse | null>(null);
 
-  // Tabs: "video" | "data" | "manual"
-  const [inputType, setInputType] = useState<"video" | "data" | "manual">("data");
+  const [bio, setBio] = useState({ name: "", number: "", age: "", foot: "Right", height: "", weight: "", position: "CM" });
+  const [stats, setStats] = useState<Record<string, number>>({ passes_completed: 0, passes_attempted: 0, tackles: 0, interceptions: 0, shots: 0, dribbles: 0, aerial_duels: 0, distance_covered: 0, sprints: 0 });
+  const [manual, setManual] = useState<Record<string, number>>({ Speed: 70, Acceleration: 70, Stamina: 70, Passing: 70, Dribbling: 70, Shooting: 70 });
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | undefined>();
+  const [tracking, setTracking] = useState<Record<string, unknown> | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+  const [demoPlayers, setDemoPlayers] = useState<DemoPlayer[]>([]);
+  const [demoSource, setDemoSource] = useState<{ title: string; match: string; kind: string; note: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Basic Bio
-  const [name, setName] = useState("Lamine Yamal");
-  const [number, setNumber] = useState("19");
-  const [age, setAge] = useState("16");
-  const [foot, setFoot] = useState("Left");
-  const [height, setHeight] = useState("180cm");
-  const [weight, setWeight] = useState("72kg");
+  useEffect(() => {
+    let cancelled = false;
+    listDemoPlayers().then((list) => { if (!cancelled) setDemoPlayers(list); }).catch(() => { /* fallback below */ });
+    return () => { cancelled = true; };
+  }, []);
 
-  // Video Mode
-  const [youtubeUrl, setYoutubeUrl] = useState("https://youtube.com/watch?v=abcd");
+  const presetItems: PresetItem[] = demoPlayers.length
+    ? demoPlayers.map((p) => ({ id: p.id, title: `${p.name} · ${p.team}`, subtitle: p.match_title + " · " + p.match_subtitle, kind: p.source.kind, meta: `${p.stats.passes_completed}/${p.stats.passes_attempted} passes · ${p.stats.shots} shots · ${p.stats.dribbles} dribbles` }))
+    : [{ id: "builtin", title: DEMO_PLAYER.name, subtitle: "Built-in sample stat line", kind: "preset" }];
 
-  // Data Mode
-  const [stats, setStats] = useState({
-    passes_completed: 45,
-    passes_attempted: 52,
-    tackles: 3,
-    interceptions: 2,
-    shots: 4,
-    dribbles: 7,
-    aerial_duels: 1,
-    distance_covered: 10.5,
-    sprints: 22
-  });
+  const problems = useMemo(() => {
+    const p: string[] = [];
+    if (!bio.name.trim()) p.push("Player name is required.");
+    if (bio.age && (Number(bio.age) < 14 || Number(bio.age) > 50)) p.push("Age must be between 14 and 50.");
+    if (mode === "data" && stats.passes_attempted < stats.passes_completed) p.push("Passes completed cannot exceed passes attempted.");
+    if (mode === "data" && Object.values(stats).every((v) => !v)) p.push("Enter at least one statistic.");
+    if (mode === "video" && !videoFile && !/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(youtubeUrl)) p.push("Provide a video file or a valid YouTube link.");
+    return p;
+  }, [bio, mode, stats, videoFile, youtubeUrl]);
 
-  // Manual Mode Fallback
-  const [speed, setSpeed] = useState(88);
-  const [acceleration, setAcceleration] = useState(92);
-  const [stamina, setStamina] = useState(80);
-  const [passing, setPassing] = useState(85);
-  const [dribbling, setDribbling] = useState(94);
-  const [shooting, setShooting] = useState(82);
+  const loadDemo = (run: boolean, item?: PresetItem) => {
+    const dp = item ? demoPlayers.find((p) => p.id === item.id) : undefined;
+    const b = dp
+      ? { name: dp.name, number: String(dp.number), age: String(dp.age), foot: dp.foot, height: dp.height, weight: dp.weight, position: dp.position }
+      : DEMO_PLAYER;
+    const s: Record<string, number> = dp
+      ? {
+          passes_completed: dp.stats.passes_completed, passes_attempted: dp.stats.passes_attempted,
+          tackles: dp.stats.tackles, interceptions: dp.stats.interceptions, shots: dp.stats.shots,
+          dribbles: dp.stats.dribbles, aerial_duels: dp.stats.aerial_duels,
+          distance_covered: dp.stats.distance_covered, sprints: dp.stats.sprints,
+          ...(dp.stats.minutes ? { minutes: dp.stats.minutes } : {}),
+          ...(dp.stats.carry_distance_m ? { carry_distance_m: dp.stats.carry_distance_m } : {}),
+        }
+      : DEMO_STATS;
+    setBio(b);
+    setStats(s);
+    setManual(DEMO_MANUAL);
+    setShowErrors(false);
+    setMode("data");
+    setDemoSource(dp ? { title: dp.name, match: dp.match_title, kind: dp.source.kind, note: dp.source.note } : null);
+    if (run) void runAssessment({ ...b }, "data", s, DEMO_MANUAL);
+    else toast.success(`${b.name} loaded`, { description: dp ? dp.match_title : "Sample stat line" });
+  };
 
-  // Results
-  const [role, setRole] = useState("Unknown");
-  const [scoutingReport, setScoutingReport] = useState("");
-  const [strengths, setStrengths] = useState<string[]>([]);
-  const [weaknesses, setWeaknesses] = useState<string[]>([]);
-  const [radarData, setRadarData] = useState<any[]>([]);
-
-  const handleAnalyze = async () => {
+  const runAssessment = async (b = bio, m = mode, s = stats, man = manual) => {
     setIsLoading(true);
-    setError(null);
+    setView("results");
     try {
-      const payload: any = {
-        name,
-        number: parseInt(number) || 0,
-        age: parseInt(age) || 0,
-        preferred_foot: foot,
-        height,
-        weight,
-        input_type: inputType
+      const payload: Record<string, unknown> = {
+        name: b.name.trim() || "Unknown",
+        number: parseInt(b.number, 10) || 0,
+        age: parseInt(b.age, 10) || 25,
+        preferred_foot: b.foot,
+        height: b.height || "180cm",
+        weight: b.weight || "75kg",
+        position: b.position || undefined,
+        input_type: m,
       };
-
-      if (inputType === "video") {
-        payload.youtube_url = youtubeUrl;
-      } else if (inputType === "data") {
-        payload.stats = stats;
+      if (m === "video") {
+        let td = tracking;
+        if (!td && videoFile) {
+          const up = await uploadVideo(videoFile);
+          td = up.tracking_data ? { ...up.tracking_data, message: up.message } : null;
+          setTracking(td);
+        }
+        if (td) payload.tracking_data = td;
+        else payload.youtube_url = youtubeUrl.trim();
+      } else if (m === "data") {
+        payload.stats = s;
       } else {
-        payload.manual_attributes = {
-          Speed: speed,
-          Acceleration: acceleration,
-          Stamina: stamina,
-          Passing: passing,
-          Dribbling: dribbling,
-          Shooting: shooting
-        };
+        payload.manual_attributes = man;
       }
-
       const res = await assessPlayer(payload);
-      
-      setRole(res.recommended_role || "Unknown Role");
-      setScoutingReport(res.scouting_report || "Report generation failed.");
-      setStrengths(res.strengths || []);
-      setWeaknesses(res.weaknesses || []);
-
-      if (res.radar_data) {
-        const mappedRadar = Object.entries(res.radar_data).map(([k, v]) => ({
-          subject: k, A: v, fullMark: 100
-        }));
-        setRadarData(mappedRadar);
-      }
-      
-      setShowResults(true);
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message || "Assessment Engine failed.");
+      setResults(res);
+      toast.success(`${res.recommended_role} — assessment ready`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Assessment failed.";
+      setResults(null);
+      toast.error("Assessment failed", { description: message });
+      setView("input");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (showResults) {
+  const handleRun = () => {
+    if (problems.length) { setShowErrors(true); toast.error(problems[0]); return; }
+    void runAssessment();
+  };
+
+  const pickVideo = async (file?: File) => {
+    if (!file) return;
+    if (!/\.(mp4|avi|mov|mkv)$/i.test(file.name)) { toast.error("Unsupported video type", { description: "Use MP4, AVI, MOV or MKV." }); return; }
+    if (file.size > 500 * 1024 * 1024) { toast.error("Video exceeds 500 MB"); return; }
+    setVideoFile(file); setYoutubeUrl(""); setTracking(null);
+    setUploading(true);
+    try {
+      const up = await uploadVideo(file);
+      setTracking(up.tracking_data ? { ...up.tracking_data, message: up.message } : null);
+      toast.success("Tracking extracted", { description: up.message });
+    } catch (err) {
+      toast.error("Upload failed", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const radarData = useMemo(() => Object.entries(results?.radar_data ?? {}).map(([k, v]) => ({ subject: k, value: v, fullMark: 100 })), [results]);
+
+  // ── Results ─────────────────────────────────────────────────
+  if (view === "results") {
     return (
-      <div className="h-full overflow-y-auto w-full">
-        <div className="max-w-7xl mx-auto p-8 space-y-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-            <button onClick={() => setShowResults(false)} className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h2 className="text-2xl font-bold text-white">Scouting & Tactical Profile</h2>
+      <Page>
+        <div className="space-y-5">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+            <button type="button" onClick={() => setView("input")} className="rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary hover:bg-white/10 hover:text-white" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
+            <div>
+              <div className="eyebrow">Player assessment</div>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Scouting & tactical profile</h2>
+            </div>
           </motion.div>
 
-          {/* Results Grid */}
-          <div className="grid grid-cols-3 gap-6">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="col-span-1 rounded-xl p-6 backdrop-blur-xl border border-cyan-500/30" style={{ background: "linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(0, 217, 255, 0.05) 100%)" }}>
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-4xl font-bold text-white mb-4 mx-auto border-4 border-white/10 shadow-[0_0_20px_rgba(0,217,255,0.3)]">
-                {number}
+          {isLoading && <ResultsSkeleton message="Building the attribute radar and scouting report…" />}
+
+          {!isLoading && results && (
+            <>
+              <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+                <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="glass-brand p-6">
+                  <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white/10 bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-black text-white shadow-[0_0_24px_rgba(0,217,255,0.35)]">{bio.number || "–"}</div>
+                  <h3 className="text-center text-2xl font-bold text-white">{bio.name}</h3>
+                  <p className="text-center font-semibold text-brand">{results.recommended_role}</p>
+                  {demoSource && (
+                    <div className="mt-3 flex flex-col items-center gap-1 text-center">
+                      <span className={cn("chip", demoSource.kind === "statsbomb" ? "border-success/40 bg-success/10 text-success" : "border-warning/40 bg-warning/10 text-warning")} title={demoSource.note}>
+                        {demoSource.kind === "statsbomb" ? "StatsBomb open data" : "Reconstructed stat line"}
+                      </span>
+                      <span className="text-[11px] text-text-muted">{demoSource.match}</span>
+                    </div>
+                  )}
+                  <dl className="mt-5 space-y-2 text-sm">
+                    {[["Position", bio.position || "–"], ["Age", bio.age || "–"], ["Foot", bio.foot], ["Build", `${bio.height || "–"} / ${bio.weight || "–"}`], ["Source", MODES.find((m) => m.id === mode)?.label ?? mode]].map(([k, v]) => (
+                      <div key={k} className="flex justify-between border-b border-white/10 pb-2"><dt className="text-text-muted">{k}</dt><dd className="font-medium text-white">{v}</dd></div>
+                    ))}
+                  </dl>
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-success">Strengths</div>
+                      <ul className="space-y-1 text-sm text-white/90">{results.strengths.map((s) => <li key={s} className="flex gap-1.5"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />{s}</li>)}</ul>
+                    </div>
+                    <div>
+                      <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-danger">To improve</div>
+                      <ul className="space-y-1 text-sm text-white/90">{results.weaknesses.map((s) => <li key={s} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />{s}</li>)}</ul>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass relative p-4">
+                  <span className="absolute left-4 top-4 chip border-white/10 bg-white/5 text-text-muted">Attribute radar</span>
+                  <div className="h-[380px] w-full pt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.15)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: 600 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                        <Radar name={bio.name} dataKey="value" stroke="#00d9ff" strokeWidth={2.5} fill="#00d9ff" fillOpacity={0.35} isAnimationActive animationDuration={900} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <StaggerGrid className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {radarData.map((d) => (
+                      <StaggerItem key={d.subject}>
+                        <div className="rounded-lg bg-white/[0.04] px-3 py-2">
+                          <div className="flex justify-between text-xs text-text-secondary"><span>{d.subject}</span><span className="font-bold text-white">{Math.round(d.value)}</span></div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10"><motion.div initial={{ width: 0 }} animate={{ width: `${d.value}%` }} transition={{ duration: 0.8 }} className="h-full bg-brand" /></div>
+                        </div>
+                      </StaggerItem>
+                    ))}
+                  </StaggerGrid>
+                </motion.div>
               </div>
-              <h3 className="text-2xl font-bold text-white text-center mb-1">{name}</h3>
-              <p className="text-cyan-400 font-medium text-center mb-6">{role}</p>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/50">Age</span><span className="text-white font-medium">{age}</span></div>
-                <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/50">Build</span><span className="text-white font-medium">{height} / {weight}</span></div>
-                <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/50">Foot</span><span className="text-white font-medium">{foot}</span></div>
-                <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/50">Input Source</span><span className="text-white font-bold capitalize">{inputType} Analysis</span></div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass p-6">
+                <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-white"><User className="h-5 w-5 text-brand" /> Scouting report</h3>
+                <p className="text-[15px] leading-7 text-white/90">{results.scouting_report}</p>
+                <p className="mt-3 text-xs text-text-muted">{health?.llm_available ? `Report enhanced by ${health.llm_provider}.` : "Rule-based report. Add an LLM key to the backend for a narrative written by the model."}</p>
+              </motion.div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" icon={ArrowLeft} onClick={() => setView("input")}>Adjust inputs</Button>
+                <Button variant="ghost" icon={Sparkles} onClick={() => runAssessment()}>Re-run</Button>
               </div>
-
-              {strengths.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-white font-bold mb-2 text-sm uppercase tracking-wider text-green-400">Key Strengths</h4>
-                  <ul className="space-y-1">
-                    {strengths.map((s, i) => <li key={i} className="text-white/80 text-sm flex gap-2"><span className="text-green-500">•</span> {s}</li>)}
-                  </ul>
-                </div>
-              )}
-               {weaknesses.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-white font-bold mb-2 text-sm uppercase tracking-wider text-red-400">Areas to Improve</h4>
-                  <ul className="space-y-1">
-                    {weaknesses.map((w, i) => <li key={i} className="text-white/80 text-sm flex gap-2"><span className="text-red-500">•</span> {w}</li>)}
-                  </ul>
-                </div>
-              )}
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="col-span-2 rounded-xl p-6 backdrop-blur-xl border border-white/10 flex items-center justify-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)" }}>
-               {/* Radar Chart dynamically generated by backend algorithm */}
-               <div className="absolute top-4 left-4 text-white/50 text-xs font-mono uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full border border-white/10">Dynamic Assessment Output</div>
-               <div className="w-full aspect-[4/3] max-h-[400px]">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
-                     <PolarGrid stroke="rgba(255,255,255,0.2)" />
-                     <PolarAngleAxis dataKey="subject" tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 500 }} />
-                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                     <Radar name={name} dataKey="A" stroke="#00d9ff" strokeWidth={3} fill="#00d9ff" fillOpacity={0.4} />
-                   </RadarChart>
-                 </ResponsiveContainer>
-               </div>
-            </motion.div>
-          </div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl p-8 backdrop-blur-xl border border-white/10 shadow-2xl" style={{ background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)" }}>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3"><User className="w-6 h-6 text-cyan-400" /> Professional Scouting Report</h3>
-            <p className="text-white/80 leading-relaxed font-serif text-lg">{scoutingReport}</p>
-          </motion.div>
+            </>
+          )}
         </div>
-      </div>
+      </Page>
     );
   }
 
-  // --- Input Form ---
+  // ── Input ───────────────────────────────────────────────────
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-8 space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative rounded-xl p-6 backdrop-blur-xl border border-cyan-500/30 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(0, 217, 255, 0.05) 100%)" }}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(0,217,255,0.4)]">
-              <User className="w-7 h-7 text-white" />
+    <Page width="max-w-6xl">
+      <div className="space-y-5">
+        <PageHeader
+          icon={User}
+          eyebrow="Advanced"
+          title="Player Assessment"
+          description="Build an attribute radar, infer the best tactical role and write a scouting report."
+          actions={<PresetPicker items={presetItems} storageKey="spaceai.demoPlayer" onRun={(i) => loadDemo(true, i)} onLoad={(i) => loadDemo(false, i)} disabled={isLoading} footer="Stat lines come from StatsBomb events of the demo fixtures; distance and sprints are estimates." />}
+        />
+
+        <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+          <GlassCard>
+            <h3 className="mb-3 text-base font-bold text-white">Bio</h3>
+            <div className="space-y-3">
+              <L label="Name"><input className="field" value={bio.name} onChange={(e) => setBio({ ...bio, name: e.target.value })} placeholder="Player name" aria-invalid={showErrors && !bio.name.trim()} /></L>
+              <div className="grid grid-cols-2 gap-3">
+                <L label="Number"><input className="field" inputMode="numeric" value={bio.number} onChange={(e) => setBio({ ...bio, number: e.target.value })} placeholder="10" /></L>
+                <L label="Age"><input className="field" inputMode="numeric" value={bio.age} onChange={(e) => setBio({ ...bio, age: e.target.value })} placeholder="24" /></L>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <L label="Position">
+                  <select className="field" value={bio.position} onChange={(e) => setBio({ ...bio, position: e.target.value })}>{POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}</select>
+                </L>
+                <L label="Preferred foot">
+                  <select className="field" value={bio.foot} onChange={(e) => setBio({ ...bio, foot: e.target.value })}><option>Right</option><option>Left</option><option>Both</option></select>
+                </L>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <L label="Height"><input className="field" value={bio.height} onChange={(e) => setBio({ ...bio, height: e.target.value })} placeholder="180cm" /></L>
+                <L label="Weight"><input className="field" value={bio.weight} onChange={(e) => setBio({ ...bio, weight: e.target.value })} placeholder="75kg" /></L>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Player Assessment</h1>
-              <p className="text-white/60">Provide raw video or match data, and the tactical engine will extract the player\'s optimum role.</p>
-            </div>
-          </div>
-        </motion.div>
+          </GlassCard>
 
-        {error && (
-          <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠ {error}</div>
-        )}
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-1 space-y-4 rounded-xl p-6 backdrop-blur-xl border border-white/10" style={{ background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)" }}>
-            <h3 className="text-lg font-bold text-white mb-4">Bio</h3>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Player Name" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50" />
-            <input type="number" value={number} onChange={e => setNumber(e.target.value)} placeholder="Number (e.g. 10)" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-cyan-500/50" />
-            <div className="grid grid-cols-2 gap-3">
-              <input type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="Age" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-cyan-500/50" />
-              <select value={foot} onChange={e => setFoot(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-cyan-500/50">
-                 <option value="Right">Right</option>
-                 <option value="Left">Left</option>
-                 <option value="Both">Both</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-               <input type="text" value={height} onChange={e => setHeight(e.target.value)} placeholder="180cm" className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-white focus:border-cyan-500/50 text-sm" />
-               <input type="text" value={weight} onChange={e => setWeight(e.target.value)} placeholder="75kg" className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-white focus:border-cyan-500/50 text-sm" />
-            </div>
-          </div>
-
-          <div className="col-span-2 space-y-4 rounded-xl p-0 backdrop-blur-xl border border-white/10 flex flex-col" style={{ background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)" }}>
-            {/* Tab navigation */}
-            <div className="flex border-b border-white/10">
-              <button onClick={() => setInputType("video")} className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${inputType === "video" ? "text-cyan-400 border-b-2 border-cyan-400 bg-white/5" : "text-white/50 hover:text-white/80"}`}><Video className="w-5 h-5"/> Video CV</button>
-              <button onClick={() => setInputType("data")} className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${inputType === "data" ? "text-cyan-400 border-b-2 border-cyan-400 bg-white/5" : "text-white/50 hover:text-white/80"}`}><Database className="w-5 h-5"/> Match Data</button>
-              <button onClick={() => setInputType("manual")} className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${inputType === "manual" ? "text-cyan-400 border-b-2 border-cyan-400 bg-white/5" : "text-white/50 hover:text-white/80"}`}><SlidersHorizontal className="w-5 h-5"/> Manual Setup</button>
+          <div className="space-y-4">
+            <div className="glass flex p-1">
+              {MODES.map((m) => {
+                const active = mode === m.id;
+                return (
+                  <button key={m.id} type="button" onClick={() => setMode(m.id)} className={cn("relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors", active ? "text-white" : "text-text-secondary hover:text-white")}>
+                    {active && <motion.span layoutId="pa-tab" transition={springSoft} className="absolute inset-0 rounded-lg bg-brand/15 ring-1 ring-brand/40" />}
+                    <span className="relative flex items-center gap-2"><m.icon className="h-4 w-4" />{m.label}</span>
+                    <span className="relative hidden text-[11px] font-normal text-text-muted sm:block">{m.blurb}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="p-6 flex-1">
-              {inputType === "video" && (
-                <div className="space-y-4 text-sm text-white/70">
-                  <p>Provide a YouTube URL of the player\'s highlights. Deepmind YOLOv8 models will track movement and heatmaps automatically to gauge their tactical role.</p>
-                  <label className="block mt-4">
-                     <span className="text-sm font-bold text-white mb-2 block">YouTube Analysis URL</span>
-                     <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 font-mono" />
-                  </label>
-                  <div className="rounded-xl p-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400/80">
-                     Phase 4 Tracking is computationally intensive. Analysis may take up to 60 seconds depending on frame resolution.
-                  </div>
-                </div>
-              )}
-
-              {inputType === "data" && (
-                <div className="space-y-4">
-                  <p className="text-sm text-white/70 pb-2 border-b border-white/10 mb-4">Input raw statistical counts. The Knowledge Graph will categorize player profiles objectively.</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <label className="flex flex-col"><span className="text-xs text-white/50 mb-1">Passes Completed / Attempted</span>
-                     <div className="flex gap-2"><input type="number" value={stats.passes_completed} onChange={e => setStats({...stats, passes_completed: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/> <span className="text-white/30 pt-1">/</span> <input type="number" value={stats.passes_attempted} onChange={e => setStats({...stats, passes_attempted: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/></div>
-                    </label>
-                    <label className="flex flex-col"><span className="text-xs text-white/50 mb-1">Tackles / Interceptions</span>
-                     <div className="flex gap-2"><input type="number" value={stats.tackles} onChange={e => setStats({...stats, tackles: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/> <span className="text-white/30 pt-1">/</span> <input type="number" value={stats.interceptions} onChange={e => setStats({...stats, interceptions: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/></div>
-                    </label>
-                    <label className="flex flex-col"><span className="text-xs text-white/50 mb-1">Shots / Dribbles</span>
-                     <div className="flex gap-2"><input type="number" value={stats.shots} onChange={e => setStats({...stats, shots: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/> <span className="text-white/30 pt-1">/</span> <input type="number" value={stats.dribbles} onChange={e => setStats({...stats, dribbles: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/></div>
-                    </label>
-                    <label className="flex flex-col"><span className="text-xs text-white/50 mb-1">Distance (km) / Sprints</span>
-                     <div className="flex gap-2"><input type="number" step="0.1" value={stats.distance_covered} onChange={e => setStats({...stats, distance_covered: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/> <span className="text-white/30 pt-1">&</span> <input type="number" value={stats.sprints} onChange={e => setStats({...stats, sprints: +e.target.value})} className="w-full bg-white/5 border border-white/10 rounded px-3 py-1 text-white"/></div>
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {inputType === "manual" && (
-                <div className="space-y-4">
-                  <p className="text-sm text-white/70 mb-4 pb-2 border-b border-white/10">Legacy sliding scale fallback for quick hypothetical player generation.</p>
-                  {[
-                    { label: "Speed", value: speed, setter: setSpeed },
-                    { label: "Acceleration", value: acceleration, setter: setAcceleration },
-                    { label: "Stamina", value: stamina, setter: setStamina },
-                    { label: "Passing", value: passing, setter: setPassing },
-                    { label: "Dribbling", value: dribbling, setter: setDribbling },
-                    { label: "Shooting", value: shooting, setter: setShooting },
-                  ].map(attr => (
-                    <div key={attr.label} className="flex items-center gap-4">
-                      <span className="w-24 text-sm text-white/70">{attr.label}</span>
-                      <input type="range" min="0" max="100" value={attr.value} onChange={e => attr.setter(parseInt(e.target.value))} className="flex-1 accent-cyan-400" />
-                      <span className="w-8 text-right text-sm text-cyan-400 font-bold">{attr.value}</span>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div key={mode} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                {mode === "data" && (
+                  <GlassCard>
+                    <p className="mb-4 text-sm text-text-secondary">Enter raw counts. The engine converts them into a five-axis radar and infers the best role.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Pair label="Passes completed / attempted" a={stats.passes_completed} b={stats.passes_attempted} onA={(v) => { setDemoSource(null); setStats({ ...stats, passes_completed: v }); }} onB={(v) => { setDemoSource(null); setStats({ ...stats, passes_attempted: v }); }} invalid={showErrors && stats.passes_attempted < stats.passes_completed} />
+                      <Pair label="Tackles / interceptions" a={stats.tackles} b={stats.interceptions} onA={(v) => setStats({ ...stats, tackles: v })} onB={(v) => setStats({ ...stats, interceptions: v })} />
+                      <Pair label="Shots / dribbles" a={stats.shots} b={stats.dribbles} onA={(v) => setStats({ ...stats, shots: v })} onB={(v) => setStats({ ...stats, dribbles: v })} />
+                      <Pair label="Aerial duels / sprints" a={stats.aerial_duels} b={stats.sprints} onA={(v) => setStats({ ...stats, aerial_duels: v })} onB={(v) => setStats({ ...stats, sprints: v })} />
+                      <L label="Distance covered (km)"><input className="field" type="number" step="0.1" min={0} value={stats.distance_covered} onChange={(e) => setStats({ ...stats, distance_covered: Number(e.target.value) })} /></L>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </GlassCard>
+                )}
+                {mode === "manual" && (
+                  <GlassCard>
+                    <p className="mb-4 text-sm text-text-secondary">Rate the player on each attribute. Add or rename axes to suit your scouting template.</p>
+                    <div className="space-y-3">
+                      {Object.entries(manual).map(([k, v]) => (
+                        <div key={k} className="flex items-center gap-3">
+                          <span className="w-28 text-sm text-text-secondary">{k}</span>
+                          <input type="range" min={0} max={100} value={v} onChange={(e) => setManual({ ...manual, [k]: Number(e.target.value) })} className="flex-1" />
+                          <span className="w-8 text-right text-sm font-bold text-brand">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </GlassCard>
+                )}
+                {mode === "video" && (
+                  <GlassCard className="space-y-4">
+                    <p className="text-sm text-text-secondary">Upload a clip or paste a YouTube link. Phase 4 tracks movement and derives physical and positional attributes. Without the optional CV packages the backend uses a clearly labelled synthetic track.</p>
+                    <input ref={fileRef} type="file" accept=".mp4,.avi,.mov,.mkv" className="hidden" onChange={(e) => pickVideo(e.target.files?.[0])} />
+                    <button type="button" onClick={() => fileRef.current?.click()} className="glass flex w-full items-center justify-center gap-3 border-2 border-dashed border-white/15 p-6 text-sm text-text-secondary transition-colors hover:border-brand/40">
+                      <Upload className="h-5 w-5 text-text-muted" /> {videoFile ? videoFile.name : "Choose a video file (MP4, AVI, MOV, MKV)"}
+                    </button>
+                    <div className="relative">
+                      <Youtube className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                      <input className="field pl-9" type="url" value={youtubeUrl} onChange={(e) => { setYoutubeUrl(e.target.value); setVideoFile(undefined); setTracking(null); }} placeholder="https://www.youtube.com/watch?v=…" />
+                    </div>
+                    {uploading && <p className="text-xs text-brand">Uploading and tracking…</p>}
+                    {tracking && <p className="text-xs text-success">Tracking ready · {String((tracking as { message?: string }).message ?? "")}</p>}
+                  </GlassCard>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {showErrors && problems.length > 0 && (
+              <div className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+                <ul className="list-disc space-y-0.5 pl-5">{problems.map((p) => <li key={p}>{p}</li>)}</ul>
+              </div>
+            )}
+
+            <Button variant="success" size="lg" block icon={Play} loading={isLoading || uploading} onClick={handleRun}>
+              Run assessment
+            </Button>
           </div>
         </div>
-
-        <motion.button
-          onClick={handleAnalyze}
-          disabled={isLoading}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg hover:shadow-[0_0_40px_rgba(76,175,80,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isLoading ? <><Loader2 className="w-6 h-6 animate-spin" /> Autonomous Assessment Running...</> : <><Play className="w-6 h-6" /> Run Tactical Diagnostics</>}
-        </motion.button>
       </div>
-    </div>
+    </Page>
+  );
+}
+
+function L({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-text-secondary">{label}</span>{children}</label>;
+}
+
+function Pair({ label, a, b, onA, onB, invalid }: { label: string; a: number; b: number; onA: (v: number) => void; onB: (v: number) => void; invalid?: boolean }) {
+  return (
+    <L label={label}>
+      <div className="flex items-center gap-2">
+        <input className="field" type="number" min={0} value={a} onChange={(e) => onA(Number(e.target.value))} aria-invalid={invalid} />
+        <span className="text-text-muted">/</span>
+        <input className="field" type="number" min={0} value={b} onChange={(e) => onB(Number(e.target.value))} aria-invalid={invalid} />
+      </div>
+    </L>
   );
 }

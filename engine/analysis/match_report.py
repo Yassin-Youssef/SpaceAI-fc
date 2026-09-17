@@ -782,8 +782,15 @@ class MatchReport:
     
     # ── Word document export ────────────────────────────────────
     
-    def export_document(self, filename="match_report.docx"):
-        """Export the match report as a Word document with Phase 2 sections."""
+    def export_document(self, filename="match_report.docx", image_files=None):
+        """
+        Export the match report as a Word document with Phase 2 sections.
+
+        Parameters:
+            filename: written inside the outputs/ folder
+            image_files: optional list of (path, caption) tuples to embed.
+                         Defaults to the standard demo output images.
+        """
         from docx import Document as DocxDocument
         from docx.shared import Inches, Pt, RGBColor
         from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -1077,7 +1084,7 @@ class MatchReport:
         h = doc.add_heading("Visualizations", level=1)
         h.runs[0].font.color.rgb = RGBColor(0x1A, 0x35, 0x50)
         
-        image_files = [
+        default_image_files = [
             ("outputs/01_pitch.png", "Formation & Player Positions"),
             ("outputs/02_pass_network.png", "Pass Network"),
             ("outputs/03_pass_sequence.png", "Build-Up Sequence"),
@@ -1103,6 +1110,9 @@ class MatchReport:
             ("outputs/18_simulation_comparison.png", "Tactical Comparison"),
         ]
         
+        if image_files is None:
+            image_files = default_image_files
+
         for img_path, caption in image_files:
             if os.path.exists(img_path):
                 h2 = doc.add_heading(caption, level=2)

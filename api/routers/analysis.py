@@ -4,8 +4,7 @@ SpaceAI FC - Full Analysis Router
   POST /api/tactical-analysis
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from pathlib import Path
+from fastapi import APIRouter, HTTPException
 
 from api.models.requests import AnalysisRequest, TacticalAnalysisRequest
 from api.models.responses import (
@@ -15,7 +14,6 @@ from api.models.responses import (
     SWOTItem, RecommendationItem, VisualizationData, PlayerRoleItem, PatternItem,
 )
 from api.services import engine_service
-from api.utils.file_handler import parse_dataset, save_dataset_upload, cleanup
 from api.utils.resolve import resolve_input
 
 router = APIRouter(tags=["Analysis"])
@@ -27,29 +25,7 @@ async def full_analysis(req: AnalysisRequest):
     Run the full Sense → Understand → Reason → Act → Explain pipeline.
     Returns all phase results plus all visualisations as base64 images.
     """
-    dataset_path = None
     try:
-        # If video/YouTube was provided, extract positions first
-        if getattr(req, "youtube_url", None) or getattr(req, "video_file", None):
-            from engine.perception.video_analyzer import VideoAnalyzer
-            va = VideoAnalyzer()
-            
-            if getattr(req, "youtube_url", None):
-                # Process YouTube URL
-                tracking_data = va.run_synthetic_demo(n_frames=50)  # Use synthetic for now until real video processing works
-            else:
-                # Process uploaded video file
-                tracking_data = va.run_synthetic_demo(n_frames=50)
-            
-            # Convert last frame's positions to team_a and team_b format
-            last_frame = tracking_data['frames'][-1]
-            team_a = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_a']]
-            team_b = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_b']]
-            
-            # Use extracted data instead of manual input
-            req.team_a = team_a
-            req.team_b = team_b
-
         team_a, team_b, passes = resolve_input(req)
 
         if not team_a or not team_b:
@@ -79,8 +55,6 @@ async def full_analysis(req: AnalysisRequest):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
-    finally:
-        cleanup(dataset_path)
 
 
 @router.post("/api/tactical-analysis", response_model=FullAnalysisResponse)
@@ -89,29 +63,7 @@ async def tactical_analysis(req: TacticalAnalysisRequest):
     Analyse team structure, space control, and passing for a match segment.
     Runs Phase 1 + Phase 2 only (no SWOT / recommendations).
     """
-    dataset_path = None
     try:
-        # If video/YouTube was provided, extract positions first
-        if getattr(req, "youtube_url", None) or getattr(req, "video_file", None):
-            from engine.perception.video_analyzer import VideoAnalyzer
-            va = VideoAnalyzer()
-            
-            if getattr(req, "youtube_url", None):
-                # Process YouTube URL
-                tracking_data = va.run_synthetic_demo(n_frames=50)  # Use synthetic for now until real video processing works
-            else:
-                # Process uploaded video file
-                tracking_data = va.run_synthetic_demo(n_frames=50)
-            
-            # Convert last frame's positions to team_a and team_b format
-            last_frame = tracking_data['frames'][-1]
-            team_a = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_a']]
-            team_b = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_b']]
-            
-            # Use extracted data instead of manual input
-            req.team_a = team_a
-            req.team_b = team_b
-
         team_a, team_b, passes = resolve_input(req)
 
         if not team_a:
@@ -179,8 +131,6 @@ async def tactical_analysis(req: TacticalAnalysisRequest):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
-    finally:
-        cleanup(dataset_path)
 
 
 # ── Helpers ───────────────────────────────────────────────────────

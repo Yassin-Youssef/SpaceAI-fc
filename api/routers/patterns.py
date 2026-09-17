@@ -6,9 +6,7 @@ from fastapi import APIRouter, HTTPException
 from api.models.requests import PatternsRequest
 from api.models.responses import PatternsResponse, PatternItem, VisualizationData
 from api.services import engine_service
-from api.utils.file_handler import parse_dataset
 from api.utils.resolve import resolve_input
-from pathlib import Path
 
 router = APIRouter(prefix="/api/patterns", tags=["Tactical Patterns"])
 
@@ -16,23 +14,6 @@ router = APIRouter(prefix="/api/patterns", tags=["Tactical Patterns"])
 @router.post("", response_model=PatternsResponse)
 async def patterns(req: PatternsRequest):
     try:
-        # If video/YouTube was provided, extract positions first
-        if getattr(req, "youtube_url", None) or getattr(req, "video_file", None):
-            from engine.perception.video_analyzer import VideoAnalyzer
-            va = VideoAnalyzer()
-            
-            if getattr(req, "youtube_url", None):
-                tracking_data = va.run_synthetic_demo(n_frames=50)
-            else:
-                tracking_data = va.run_synthetic_demo(n_frames=50)
-            
-            last_frame = tracking_data['frames'][-1]
-            team_a = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_a']]
-            team_b = [{'name': f'Player {p["id"]}', 'number': p['id'], 'x': p['x'], 'y': p['y'], 'position': 'CM'} for p in last_frame['team_b']]
-            
-            req.team_a = team_a
-            req.team_b = team_b
-
         team_a, team_b, _ = resolve_input(req)
 
         if not team_a or not team_b:

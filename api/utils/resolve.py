@@ -1,66 +1,83 @@
 """
-SpaceAI FC - Input Resolver Utilities
-======================================
-Bridges Phase 4 (Computer Vision) to Phase 1-3.
+SpaceAI FC - Input Resolver
+=============================
+Single integration point between the three input methods
+(manual / video / dataset) and the analysis engine.
+
+Every analysis router calls `resolve_input(req)` and receives plain
+`(team_a, team_b, passes)` lists regardless of where the data came from.
 """
 
 from pathlib import Path
 from fastapi import HTTPException
+
 from api.utils.file_handler import parse_dataset
-from engine.perception.video_analyzer import VideoAnalyzer
+from api.services import video_service
+
 
 def resolve_input(req):
     """
-    Parses tracking data based on the request's input_type.
-    Determines whether the data is from manual entry, a dataset,
-    or a YouTube/Video file that needs computer vision tracking.
-    
+    Resolve request data into engine-ready lists.
+
+    Priority:
+        1. dataset  — `dataset_file` path (populated by /api/dataset/upload)
+        2. video    — `video_file` path or `youtube_url` (Phase 4 CV, with fallback)
+        3. manual   — `team_a` / `team_b` / `passes` supplied directly
+
+    If the declared input_type has no matching payload but manual coordinates
+    are present (e.g. the frontend already uploaded the video and injected the
+    tracked positions), the manual data is used.
+
     Returns:
         tuple: (team_a: list, team_b: list, passes: list)
     """
-    # 1. Dataset parsing
-    if getattr(req, "input_type", "manual") == "dataset" and getattr(req, "dataset_file", None):
-        data = parse_dataset(Path(req.dataset_file))
+    input_type = getattr(req, "input_type", "manual") or "manual"
+    dataset_file = getattr(req, "dataset_file", None)
+    video_file = getattr(req, "video_file", None)
+    youtube_url = getattr(req, "youtube_url", None)
+
+    # 1. Dataset file already saved on disk
+    if input_type == "dataset" and dataset_file:
+        path = Path(dataset_file)
+        if not path.exists():
+            raise HTTPException(status_code=400, detail="Dataset file not found on server.")
+        data = parse_dataset(path)
+        if not data.get("team_a") and not data.get("team_b"):
+            raise HTTPException(
+                status_code=400,
+                detail="Dataset parsed but contained no players. "
+                       "Expected CSV columns team,name,number,x,y,position or JSON with team_a/team_b.",
+            )
         return data.get("team_a", []), data.get("team_b", []), data.get("passes", [])
-        
-    # 2. Phase 4 Video CV parsing
-    elif getattr(req, "input_type", "manual") == "video" and (getattr(req, "video_file", None) or getattr(req, "youtube_url", None)):
-        analyzer = VideoAnalyzer()
+
+    # 2. Video / YouTube — Phase 4 computer vision
+    if input_type == "video" and (video_file or youtube_url):
         try:
-            if getattr(req, "youtube_url", None):
-                analyzer.download_youtube(req.youtube_url)
+            if youtube_url:
+                tracking = video_service.process_youtube_url(youtube_url)
             else:
-                analyzer.load_video(req.video_file)
-                
-            tracking_data = analyzer.analyze_video(sample_rate=5, max_frames=50) # run CV
-            
-            if "frames" in tracking_data and tracking_data["frames"]:
-                # Snag a robust tracking frame to feed the engine's static spatial analysis
-                frame = tracking_data["frames"][-1]
-                
-                # Convert raw cv dicts safely into strict Pydantic model equivalents
-                def fmt_p(p, team="A"):
-                    return {
-                        "name": f"Player {p.get('id', 0)}",
-                        "number": p.get('id', 0),
-                        "x": p.get('x', 0.0),
-                        "y": p.get('y', 0.0),
-                        "position": p.get('role', "CM")
-                    }
-                
-                team_a_cv = [fmt_p(p, "A") for p in frame.get("team_a", [])]
-                team_b_cv = [fmt_p(p, "B") for p in frame.get("team_b", [])]
-                
-                return team_a_cv, team_b_cv, []
-            else:
-                raise HTTPException(status_code=400, detail="No players detected in video.")
-            
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Phase 4 computer vision failed: {str(e)}")
-            
-    # 3. Manual coordinate object
-    team_a = [p.model_dump() for p in req.team_a] if getattr(req, "team_a", None) else []
-    team_b = [p.model_dump() for p in req.team_b] if getattr(req, "team_b", None) else []
-    passes = [p.model_dump() for p in req.passes] if getattr(req, "passes", None) else []
-    
+                tracking = video_service.process_video_file(video_file)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Video analysis failed: {exc}")
+
+        team_a = tracking.get("team_a", [])
+        team_b = tracking.get("team_b", [])
+        if not team_a and not team_b:
+            raise HTTPException(status_code=400, detail="No players detected in video.")
+        return team_a, team_b, []
+
+    # 3. Manual coordinates (also used after client-side video/dataset upload)
+    team_a = [_dump(p) for p in getattr(req, "team_a", None) or []]
+    team_b = [_dump(p) for p in getattr(req, "team_b", None) or []]
+    passes = [_dump(p) for p in getattr(req, "passes", None) or []]
+
     return team_a, team_b, passes
+
+
+def _dump(item):
+    """Accept both Pydantic models and plain dicts."""
+    if hasattr(item, "model_dump"):
+        return item.model_dump()
+    return dict(item)

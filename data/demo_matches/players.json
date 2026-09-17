@@ -1,0 +1,310 @@
+[
+ {
+  "id": "lamine-2025",
+  "match": "clasico-2025",
+  "team": "Barcelona",
+  "name": "Lamine Yamal",
+  "number": 19,
+  "age": 17,
+  "foot": "Left",
+  "height": "180cm",
+  "weight": "72kg",
+  "position": "RW",
+  "stats": {
+   "passes_completed": 38,
+   "passes_attempted": 47,
+   "tackles": 1,
+   "interceptions": 1,
+   "shots": 4,
+   "dribbles": 6,
+   "aerial_duels": 1,
+   "distance_covered": 10.1,
+   "sprints": 24
+  },
+  "match_title": "Barcelona 4-3 Real Madrid",
+  "match_subtitle": "La Liga · Estadi Olímpic Lluís Companys · 11 May 2025 · title decider",
+  "source": {
+   "kind": "reconstructed",
+   "note": "Reconstructed: real line-up facts, estimated stat line (no public event data)."
+  }
+ },
+ {
+  "id": "messi-2022",
+  "match": "wc2022-final",
+  "team": "Argentina",
+  "name": "Lionel Messi",
+  "number": 10,
+  "age": 35,
+  "foot": "Left",
+  "height": "170cm",
+  "weight": "72kg",
+  "position": "RW",
+  "stats": {
+   "passes_completed": 49,
+   "passes_attempted": 60,
+   "tackles": 2,
+   "interceptions": 2,
+   "shots": 5,
+   "dribbles": 0,
+   "aerial_duels": 1,
+   "distance_covered": 13.4,
+   "sprints": 45,
+   "minutes": 120,
+   "carry_distance_m": 431.0
+  },
+  "match_title": "Argentina 3-3 France",
+  "match_subtitle": "FIFA World Cup Final · Lusail · 18 Dec 2022 (Argentina won 4-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "mbappe-2022",
+  "match": "wc2022-final",
+  "team": "France",
+  "name": "Kylian Mbappé",
+  "number": 10,
+  "age": 23,
+  "foot": "Right",
+  "height": "178cm",
+  "weight": "75kg",
+  "position": "LW",
+  "stats": {
+   "passes_completed": 19,
+   "passes_attempted": 27,
+   "tackles": 0,
+   "interceptions": 2,
+   "shots": 6,
+   "dribbles": 6,
+   "aerial_duels": 1,
+   "distance_covered": 13.4,
+   "sprints": 33,
+   "minutes": 120,
+   "carry_distance_m": 269.0
+  },
+  "match_title": "Argentina 3-3 France",
+  "match_subtitle": "FIFA World Cup Final · Lusail · 18 Dec 2022 (Argentina won 4-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "enzo-2022",
+  "match": "wc2022-final",
+  "team": "Argentina",
+  "name": "Enzo Fernández",
+  "number": 24,
+  "age": 21,
+  "foot": "Right",
+  "height": "178cm",
+  "weight": "76kg",
+  "position": "CDM",
+  "stats": {
+   "passes_completed": 79,
+   "passes_attempted": 94,
+   "tackles": 9,
+   "interceptions": 3,
+   "shots": 2,
+   "dribbles": 1,
+   "aerial_duels": 0,
+   "distance_covered": 13.4,
+   "sprints": 21,
+   "minutes": 120,
+   "carry_distance_m": 272.0
+  },
+  "match_title": "Argentina 3-3 France",
+  "match_subtitle": "FIFA World Cup Final · Lusail · 18 Dec 2022 (Argentina won 4-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "griezmann-2022",
+  "match": "wc2022-final",
+  "team": "France",
+  "name": "Antoine Griezmann",
+  "number": 7,
+  "age": 31,
+  "foot": "Left",
+  "height": "176cm",
+  "weight": "73kg",
+  "position": "CAM",
+  "stats": {
+   "passes_completed": 21,
+   "passes_attempted": 30,
+   "tackles": 4,
+   "interceptions": 2,
+   "shots": 0,
+   "dribbles": 0,
+   "aerial_duels": 2,
+   "distance_covered": 7.8,
+   "sprints": 7,
+   "minutes": 70,
+   "carry_distance_m": 46.0
+  },
+  "match_title": "Argentina 3-3 France",
+  "match_subtitle": "FIFA World Cup Final · Lusail · 18 Dec 2022 (Argentina won 4-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "messi-2017",
+  "match": "clasico-2017",
+  "team": "Barcelona",
+  "name": "Lionel Messi",
+  "number": 10,
+  "age": 29,
+  "foot": "Left",
+  "height": "170cm",
+  "weight": "72kg",
+  "position": "CAM",
+  "stats": {
+   "passes_completed": 37,
+   "passes_attempted": 47,
+   "tackles": 1,
+   "interceptions": 1,
+   "shots": 7,
+   "dribbles": 7,
+   "aerial_duels": 1,
+   "distance_covered": 10.3,
+   "sprints": 48,
+   "minutes": 92,
+   "carry_distance_m": 485.0
+  },
+  "match_title": "Real Madrid 2-3 Barcelona",
+  "match_subtitle": "La Liga · Santiago Bernabéu · 23 Apr 2017 · Messi 92' winner",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "xavi-2011",
+  "match": "ucl2011-final",
+  "team": "Barcelona",
+  "name": "Xavi",
+  "number": 6,
+  "age": 31,
+  "foot": "Right",
+  "height": "170cm",
+  "weight": "68kg",
+  "position": "CM",
+  "stats": {
+   "passes_completed": 144,
+   "passes_attempted": 151,
+   "tackles": 0,
+   "interceptions": 2,
+   "shots": 3,
+   "dribbles": 1,
+   "aerial_duels": 0,
+   "distance_covered": 10.4,
+   "sprints": 48,
+   "minutes": 93,
+   "carry_distance_m": 584.0
+  },
+  "match_title": "Barcelona 3-1 Manchester United",
+  "match_subtitle": "Champions League Final · Wembley · 28 May 2011",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "rooney-2011",
+  "match": "ucl2011-final",
+  "team": "Manchester United",
+  "name": "Wayne Rooney",
+  "number": 10,
+  "age": 25,
+  "foot": "Right",
+  "height": "176cm",
+  "weight": "83kg",
+  "position": "ST",
+  "stats": {
+   "passes_completed": 33,
+   "passes_attempted": 44,
+   "tackles": 0,
+   "interceptions": 3,
+   "shots": 2,
+   "dribbles": 3,
+   "aerial_duels": 4,
+   "distance_covered": 10.4,
+   "sprints": 22,
+   "minutes": 93,
+   "carry_distance_m": 205.0
+  },
+  "match_title": "Barcelona 3-1 Manchester United",
+  "match_subtitle": "Champions League Final · Wembley · 28 May 2011",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "gerrard-2005",
+  "match": "ucl2005-final",
+  "team": "Liverpool",
+  "name": "Steven Gerrard",
+  "number": 8,
+  "age": 24,
+  "foot": "Right",
+  "height": "183cm",
+  "weight": "83kg",
+  "position": "CM",
+  "stats": {
+   "passes_completed": 60,
+   "passes_attempted": 75,
+   "tackles": 6,
+   "interceptions": 2,
+   "shots": 2,
+   "dribbles": 1,
+   "aerial_duels": 4,
+   "distance_covered": 13.4,
+   "sprints": 19,
+   "minutes": 120,
+   "carry_distance_m": 152.0
+  },
+  "match_title": "Liverpool 3-3 AC Milan",
+  "match_subtitle": "Champions League Final · Istanbul · 25 May 2005 (Liverpool won 3-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ },
+ {
+  "id": "kaka-2005",
+  "match": "ucl2005-final",
+  "team": "AC Milan",
+  "name": "Kaká",
+  "number": 22,
+  "age": 23,
+  "foot": "Right",
+  "height": "186cm",
+  "weight": "82kg",
+  "position": "CAM",
+  "stats": {
+   "passes_completed": 41,
+   "passes_attempted": 56,
+   "tackles": 0,
+   "interceptions": 1,
+   "shots": 4,
+   "dribbles": 5,
+   "aerial_duels": 1,
+   "distance_covered": 13.4,
+   "sprints": 67,
+   "minutes": 120,
+   "carry_distance_m": 541.0
+  },
+  "match_title": "Liverpool 3-3 AC Milan",
+  "match_subtitle": "Champions League Final · Istanbul · 25 May 2005 (Liverpool won 3-2 on penalties)",
+  "source": {
+   "kind": "statsbomb",
+   "note": "Counts from StatsBomb events; distance and sprints are estimates (event data has no tracking)."
+  }
+ }
+]

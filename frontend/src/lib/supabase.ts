@@ -94,6 +94,16 @@ export async function signIn(
   return { user: userFromSupabase(data.user), error: null };
 }
 
+/** Google OAuth via Supabase (redirects; session is restored on return). */
+export async function signInWithGoogle(): Promise<{ error: string | null }> {
+  if (!supabase) return { error: "Supabase is not configured." };
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+  return { error: error ? formatAuthError(error) : null };
+}
+
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   await supabase.auth.signOut();
