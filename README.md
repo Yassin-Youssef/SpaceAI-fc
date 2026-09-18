@@ -583,6 +583,26 @@ A full polish-and-repair pass across the whole stack.
 - Guest mode, a real Settings page (backend health and optional-module status), an About page, mobile drawer navigation and a consistent dark theme.
 - Six unused mock components removed, and a broken import that prevented the frontend from building at all.
 
+**Vision and RL, once the optional packages were installed**
+
+Installing `ultralytics`, `opencv-python`, `yt-dlp`, `gymnasium` and `stable-baselines3` exposed four bugs
+that the synthetic fallbacks had been hiding. All four are fixed and verified against real match footage
+(60 frames tracked, 11 v 11 players extracted, formations detected, end to end in the browser).
+
+- Team classification returned `'other'` for every detection unless jersey colours had been set in advance,
+  and only `'A'`/`'B'` are kept, so real uploads produced **zero players**. Teams are now clustered
+  automatically by shirt colour: torso pixels only, grass masked out, hue encoded so red near 0 and red
+  near 180 count as the same colour.
+- Pitch mapping hard-coded 1920×1080, so an 854×480 clip squeezed every player into the left third of the
+  pitch. It now reads the real frame size.
+- YouTube downloads failed outright, because YouTube no longer serves combined audio+video and merging
+  needs ffmpeg. The downloader asks for a **video-only** stream, which is all the vision pipeline uses, so
+  **no ffmpeg is required**.
+- Letterbox and pillarbox bars were being mapped onto the pitch as playable space. They are now detected
+  and cropped before detection, which lifted detection on the bundled sample from 8 to 14 players a frame.
+- The RL agent retrained on every `/api/rl/predict` call, about 11 seconds each, for an identical policy.
+  It is trained once per process and cached.
+
 **Verification**: `test_api.py` covers every endpoint including dataset upload, export and the demo fixtures; `npm run typecheck` passes; a Playwright script drives all 12 features in a real browser with no console errors.
 
 ---
