@@ -239,7 +239,11 @@ def _tracking_to_snapshot(tracking: dict, method: str = "yolo") -> dict:
     """
     frames = tracking.get("frames", []) or []
     if not frames:
-        return _synthetic_tracking("synthetic", "No frames were produced by the tracker.")
+        return _synthetic_tracking(
+            "synthetic",
+            "The video produced no readable frames, so it is either corrupt or in a "
+            "codec OpenCV cannot decode. Synthetic tracking data was used instead.",
+        )
 
     def _median_positions(key: str) -> list:
         buckets: dict = {}

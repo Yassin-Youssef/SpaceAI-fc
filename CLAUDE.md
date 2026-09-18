@@ -66,9 +66,16 @@ On Windows set `PYTHONIOENCODING=utf-8` first, otherwise the ✓/✗ glyphs cras
 
 **Install Phase 4 optional dependencies** (video analysis and RL coach):
 ```bash
-pip install ultralytics opencv-python yt-dlp   # video analysis
-pip install gymnasium stable-baselines3         # RL coach
+.venv/Scripts/pip install ultralytics opencv-python yt-dlp   # video analysis
+.venv/Scripts/pip install gymnasium stable-baselines3         # RL coach
 ```
+These are installed in this repo's `.venv`. `GET /api/health` reports which are live under `capabilities`.
+Notes from getting the real path working:
+- **ffmpeg is not required.** YouTube no longer serves combined audio+video streams, and merging them would need ffmpeg. `download_youtube()` asks for a **video-only** stream instead, which downloads over plain HTTPS and is all the CV pipeline needs. Asking for `best[height<=720]` fails with "Requested format is not available".
+- **Team assignment is automatic.** `classify_team()` returns `'other'` unless `set_team_colors()` was called, and `analyze_video()` only keeps `'A'`/`'B'`, so uploads used to yield zero players. `classify_teams()` now falls back to `auto_assign_teams()`, which clusters tracks by jersey colour (torso pixels only, grass-green masked out, hue encoded as cos/sin) and re-splits on the dominant axis if one cluster is under 15%.
+- **`pixel_to_pitch()` uses the real frame size.** It previously hard-coded 1920×1080, so an 854×480 clip mapped every player into x 0–53 of a 0–120 pitch.
+- **The RL agent is trained once per process** and cached in `api/routers/simulation.py`; it used to retrain on every `/api/rl/predict` call, costing about 11 seconds each time. `/api/rl/train` replaces the cached agent.
+- YOLOv8 weights (`yolov8n.pt`, ~6 MB) download automatically on first detection and are git-ignored.
 
 ## Frontend Environment Variables
 

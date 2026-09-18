@@ -311,6 +311,8 @@ class VideoAnalyzer:
         self.reference_pitch_pts = None
         self._temp_dir = None
         self._model = None
+        self.frame_width = None
+        self.frame_height = None
         
         # Team colors for classification (HSV ranges)
         self.team_a_hsv = None  # (lower, upper) HSV bounds
@@ -367,6 +369,7 @@ class VideoAnalyzer:
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         cap.release()
         
+        self.frame_width, self.frame_height = w, h
         print(f"  Resolution: {w}x{h}  FPS: {fps:.1f}  Frames: {total}")
         return {'fps': fps, 'total_frames': total, 'width': w, 'height': h}
     
@@ -402,11 +405,19 @@ class VideoAnalyzer:
         
         os.makedirs(output_dir, exist_ok=True)
         
+        # Video-only streams avoid needing ffmpeg: YouTube no longer serves
+        # combined audio+video for most clips, and the CV pipeline never
+        # uses audio. Progressive formats stay as a fallback.
         ydl_opts = {
-            'format': 'best[height<=720]',
-            'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
+            'format': (
+                'bestvideo[height<=720][protocol=https][ext=mp4]/'
+                'bestvideo[height<=720][protocol=https]/'
+                'best[height<=720]'
+            ),
+            'outtmpl': os.path.join(output_dir, 'clip.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
+            'noplaylist': True,
         }
         
         print(f"  Downloading from YouTube...")
@@ -471,9 +482,12 @@ class VideoAnalyzer:
             # Default: simple linear mapping assuming full-pitch view
             # This is a rough approximation for demo purposes
             coords = np.atleast_2d(pixel_coords).astype(np.float32)
-            # Assume video is 1920x1080 showing full pitch
-            pitch_x = coords[:, 0] / 1920.0 * PITCH_LENGTH
-            pitch_y = coords[:, 1] / 1080.0 * PITCH_WIDTH
+            # Use the real frame size: hard-coding 1920x1080 squashed
+            # every other resolution into a corner of the pitch.
+            width = float(self.frame_width or 1920)
+            height = float(self.frame_height or 1080)
+            pitch_x = coords[:, 0] / width * PITCH_LENGTH
+            pitch_y = coords[:, 1] / height * PITCH_WIDTH
             return np.column_stack([pitch_x, pitch_y])
         
         coords = np.atleast_2d(pixel_coords).astype(np.float32)
@@ -665,18 +679,112 @@ class VideoAnalyzer:
     def classify_teams(self, tracked_frames):
         """
         Classify all tracked detections into teams.
-        
+
+        Uses the configured jersey colours when set_team_colors() was called,
+        otherwise splits the tracks into two colour clusters automatically, so
+        the pipeline works on footage whose kits are not known in advance.
+
         Args:
             tracked_frames: output from track_players()
-        
+
         Returns:
             Same structure with 'team' field added to each detection
         """
+        if self.team_a_hsv is None:
+            return self.auto_assign_teams(tracked_frames)
+
         for frame_dets in tracked_frames:
             for det in frame_dets:
                 det['team'] = self.classify_team(det.get('crop'))
         return tracked_frames
-    
+
+    def _jersey_feature(self, crop):
+        """
+        Colour signature of a detection's shirt.
+
+        Samples the torso only (central columns, upper-middle rows) and drops
+        grass-green and washed-out pixels, so the signature reflects the kit
+        rather than the pitch behind the player.  Hue is encoded as (cos, sin)
+        scaled by saturation so red near 0 and red near 180 are the same colour.
+        """
+        if crop is None or crop.size == 0 or not HAS_CV2:
+            return None
+        h, w = crop.shape[:2]
+        if h < 8 or w < 4:
+            return None
+        torso = crop[int(h * 0.20):max(int(h * 0.20) + 1, int(h * 0.55)),
+                     int(w * 0.25):max(int(w * 0.25) + 1, int(w * 0.75))]
+        if torso.size == 0:
+            return None
+        hsv = cv2.cvtColor(torso, cv2.COLOR_BGR2HSV)
+        hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
+        grass = (hue > 30) & (hue < 90) & (sat > 60)
+        usable = (~grass) & (val > 35) & (val < 250)
+        pixels = hsv[usable]
+        if pixels.size < 20:
+            pixels = hsv[(val > 35) & (val < 250)]
+        if pixels.size < 10:
+            return None
+        hue_rad = np.deg2rad(float(np.median(pixels[:, 0])) * 2.0)
+        s_med = float(np.median(pixels[:, 1])) / 255.0
+        v_med = float(np.median(pixels[:, 2])) / 255.0
+        return np.array([np.cos(hue_rad) * s_med,
+                         np.sin(hue_rad) * s_med,
+                         v_med], dtype=np.float32)
+
+    def auto_assign_teams(self, tracked_frames):
+        """
+        Split tracked players into two teams by clustering jersey colour.
+
+        Each track contributes one signature (the median over its detections),
+        the signatures are clustered in two, and every detection inherits its
+        track's label. Tracks with no usable colour fall back to a left/right
+        split of the frame.
+        """
+        per_track = {}
+        for frame_dets in tracked_frames:
+            for det in frame_dets:
+                feat = self._jersey_feature(det.get('crop'))
+                if feat is not None:
+                    per_track.setdefault(det['track_id'], []).append(feat)
+
+        track_ids = [t for t, feats in per_track.items() if feats]
+        labels = {}
+
+        if len(track_ids) >= 2:
+            signatures = np.array([np.median(np.vstack(per_track[t]), axis=0)
+                                   for t in track_ids])
+            try:
+                from sklearn.cluster import KMeans
+                assignment = KMeans(n_clusters=2, n_init=10,
+                                    random_state=42).fit(signatures).labels_
+            except Exception:
+                axis = int(np.argmax(signatures.std(axis=0)))
+                assignment = (signatures[:, axis] >
+                              np.median(signatures[:, axis])).astype(int)
+            # A wildly lopsided split usually means one outlier track rather
+            # than two kits; fall back to a median cut on the strongest axis.
+            share = min(np.sum(assignment == 0), np.sum(assignment == 1)) / len(assignment)
+            if share < 0.15:
+                axis = int(np.argmax(signatures.std(axis=0)))
+                assignment = (signatures[:, axis] >
+                              np.median(signatures[:, axis])).astype(int)
+            # Larger cluster becomes team A so the mapping is deterministic
+            first = 0 if np.sum(assignment == 0) >= np.sum(assignment == 1) else 1
+            for tid, group in zip(track_ids, assignment):
+                labels[tid] = 'A' if group == first else 'B'
+            n_a = sum(1 for v in labels.values() if v == 'A')
+            print(f"  Teams auto-assigned by jersey colour: "
+                  f"{n_a} vs {len(labels) - n_a} tracks")
+
+        half = (self.frame_width or 1920) / 2
+        for frame_dets in tracked_frames:
+            for det in frame_dets:
+                det['team'] = labels.get(
+                    det['track_id'],
+                    'A' if det['center'][0] < half else 'B')
+        return tracked_frames
+
     # ── Full Pipeline ──────────────────────────────────────────
     
     def analyze_video(self, sample_rate=5, max_frames=200):

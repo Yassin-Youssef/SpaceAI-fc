@@ -281,6 +281,11 @@ pip install -r requirements.txt
 pip install ultralytics opencv-python yt-dlp    # Video analysis
 pip install gymnasium stable-baselines3          # RL coach
 ```
+Without these the app still runs: video inputs return a clearly labelled synthetic snapshot and the
+RL coach uses a rule-based fallback. With them, uploads and YouTube links are tracked by YOLOv8 and
+mapped to pitch coordinates. **ffmpeg is not needed** — the downloader requests a video-only stream,
+which is all the vision pipeline uses. YOLO weights (~6 MB) download automatically on first use.
+`GET /api/health` reports which optional modules are active.
 
 ### 5. Set up LLM (optional — enables Ask SpaceAI, Player Assessment, Compare, Explanation)
 ```bash

@@ -19,6 +19,20 @@ from api.models.responses import (
 
 router = APIRouter(tags=["Simulation & RL"])
 
+# The PPO agent is trained once per process and reused: training on every
+# request cost ~11s and produced the same policy each time.
+_RL_COACH = None
+
+
+def _get_trained_coach(rl_coach_cls):
+    global _RL_COACH
+    if _RL_COACH is None:
+        coach = rl_coach_cls()
+        coach.train(timesteps=5_000, seed=42, verbose=0)
+        _RL_COACH = coach
+    return _RL_COACH
+
+
 # Action names for RL coach
 ACTION_NAMES = {
     0: "Keep current tactics",
@@ -151,8 +165,7 @@ async def rl_predict(req: RLMatchState):
         if not (HAS_GYM and HAS_SB3):
             return _rule_based_predict(state_dict)
 
-        coach = RLCoach()
-        coach.train(timesteps=5_000, seed=42, verbose=0)  # quick train if not trained
+        coach = _get_trained_coach(RLCoach)
 
         state_arr = np.array([
             req.own_formation, req.opp_formation, req.space_control,
@@ -189,8 +202,10 @@ async def rl_train(req: RLTrainRequest):
                        "Run: pip install gymnasium stable-baselines3",
             )
 
+        global _RL_COACH
         coach = RLCoach()
         coach.train(timesteps=req.timesteps, seed=req.seed, verbose=0)
+        _RL_COACH = coach  # later predictions use the freshly trained agent
 
         avg_reward = float(np.mean(coach.training_rewards)) if coach.training_rewards else 0.0
         episodes = len(coach.training_rewards)
