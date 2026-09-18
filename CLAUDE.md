@@ -76,6 +76,8 @@ Notes from getting the real path working:
 - **`pixel_to_pitch()` uses the real frame size.** It previously hard-coded 1920×1080, so an 854×480 clip mapped every player into x 0–53 of a 0–120 pitch.
 - **The RL agent is trained once per process** and cached in `api/routers/simulation.py`; it used to retrain on every `/api/rl/predict` call, costing about 11 seconds each time. `/api/rl/train` replaces the cached agent.
 - YOLOv8 weights (`yolov8n.pt`, ~6 MB) download automatically on first detection and are git-ignored.
+- **Letterbox bars are cropped automatically.** `load_video()` calls `_detect_letterbox()`, stores `crop_rect`, and `analyze_video()` crops every frame before detection. On the bundled sample this lifted detection from 8 to 14 players a frame, because the pillarbox bars were being mapped onto the pitch.
+- **Bundled sample clip**: `data/demo_video/corner_kick.mp4` (CC BY 3.0, see `ATTRIBUTION.md` beside it). Served by `GET /api/demo/video` (metadata) and `POST /api/demo/video/analyze` (runs the real pipeline, cached in memory). The frontend's Video tab shows a "Track sample clip" card. Note the video/dataset tabs accept an already-resolved upload, so validation must not demand a file when `resolved.source` matches the tab.
 
 ## Frontend Environment Variables
 

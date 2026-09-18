@@ -13,6 +13,7 @@ import {
 import {
   FEATURES_NEEDING_TEAM_B, FEATURES_WITH_PASSES, toPlayerData, parsePassesText,
   uploadVideo, processYouTube, uploadDataset, datasetTemplateUrl, getDemoMatch,
+  getDemoVideoInfo, analyzeDemoVideo, type DemoVideoInfo,
 } from "../../lib/api";
 import { Page, PageHeader, GlassCard, Button, SectionTitle } from "./common/Primitives";
 import { DemoPicker } from "./common/DemoPicker";
@@ -123,6 +124,29 @@ export function FeaturePageInput({
   const [manualPasses, setManualPasses] = useState<PassEvent[] | undefined>(initial?.manualPasses);
   const [demoMatch, setDemoMatch] = useState<AnalysisFormData["demoMatch"]>(initial?.demoMatch);
   const [demoBusy, setDemoBusy] = useState<string | null>(null);
+  const [sampleClip, setSampleClip] = useState<DemoVideoInfo | null>(null);
+  const [sampleBusy, setSampleBusy] = useState(false);
+
+  useEffect(() => {
+    let off = false;
+    getDemoVideoInfo().then((v) => { if (!off && v.available) setSampleClip(v); }).catch(() => {});
+    return () => { off = true; };
+  }, []);
+
+  const useSampleClip = async () => {
+    setSampleBusy(true);
+    try {
+      const res = await analyzeDemoVideo();
+      if (!res.success || !res.tracking_data) throw new Error(res.message || "Sample clip could not be analysed.");
+      setVideoFile(undefined); setYoutubeUrl("");
+      setResolved({ teamA: res.tracking_data.team_a, teamB: res.tracking_data.team_b, passes: [], note: res.message, source: "video" });
+      toast.success("Sample clip tracked", { description: (res.message || "").slice(0, 120) });
+    } catch (err) {
+      toast.error("Could not analyse the sample clip", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setSampleBusy(false);
+    }
+  };
 
   const videoInputRef = useRef<HTMLInputElement>(null);
   const datasetInputRef = useRef<HTMLInputElement>(null);
@@ -154,10 +178,14 @@ export function FeaturePageInput({
     if (errorCount > 0) manualProblems.push(`${errorCount} field${errorCount === 1 ? "" : "s"} need attention.`);
     if (ballErr) manualProblems.push("Ball position must be within x 0–120, y 0–80.");
   } else if (activeTab === "video") {
-    if (!videoFile && !youtubeUrl.trim()) manualProblems.push("Choose a video file or paste a YouTube link.");
-    else if (!videoFile && youtubeUrl.trim() && !isYouTube(youtubeUrl)) manualProblems.push("Only youtube.com / youtu.be links are supported.");
+    const alreadyResolved = resolved?.source === "video" && resolved.teamA.length > 0;
+    if (!alreadyResolved) {
+      if (!videoFile && !youtubeUrl.trim()) manualProblems.push("Choose a video file, paste a YouTube link, or track the sample clip.");
+      else if (!videoFile && youtubeUrl.trim() && !isYouTube(youtubeUrl)) manualProblems.push("Only youtube.com / youtu.be links are supported.");
+    }
   } else if (activeTab === "dataset") {
-    if (!datasetFile) manualProblems.push("Choose a CSV or JSON dataset.");
+    const alreadyResolved = resolved?.source === "dataset" && resolved.teamA.length > 0;
+    if (!datasetFile && !alreadyResolved) manualProblems.push("Choose a CSV or JSON dataset.");
   }
   const canAnalyze = manualProblems.length === 0 && !isLoading && !isResolving;
 
@@ -388,6 +416,25 @@ export function FeaturePageInput({
               {activeTab === "video" && (
                 <motion.div key="video" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-5">
                   <input ref={videoInputRef} type="file" accept={VIDEO_TYPES.join(",")} className="hidden" onChange={(e) => pickFile(e.target.files?.[0], "video")} />
+                  {sampleClip && (
+                    <GlassCard className="flex flex-col gap-3 border-brand/30 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-white">Sample clip · {sampleClip.title}</span>
+                          <span className="chip border-success/40 bg-success/10 text-[10px] text-success">{sampleClip.license}</span>
+                        </div>
+                        <p className="text-xs text-text-secondary">{sampleClip.subtitle} · {sampleClip.duration_s}s</p>
+                        <p className="mt-1 text-[11px] text-text-muted">{sampleClip.note}</p>
+                        <a href={sampleClip.source_url} target="_blank" rel="noreferrer" className="text-[11px] text-brand hover:underline">
+                          {sampleClip.author}, Wikimedia Commons
+                        </a>
+                      </div>
+                      <Button variant="demo" icon={Sparkles} loading={sampleBusy} onClick={useSampleClip} className="shrink-0">
+                        Track sample clip
+                      </Button>
+                    </GlassCard>
+                  )}
+
                   <Dropzone
                     icon={Upload}
                     onClick={() => videoInputRef.current?.click()}

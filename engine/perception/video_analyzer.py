@@ -313,6 +313,7 @@ class VideoAnalyzer:
         self._model = None
         self.frame_width = None
         self.frame_height = None
+        self.crop_rect = None   # (x0, y0, x1, y1) content box, excludes letterbox bars
         
         # Team colors for classification (HSV ranges)
         self.team_a_hsv = None  # (lower, upper) HSV bounds
@@ -371,7 +372,49 @@ class VideoAnalyzer:
         
         self.frame_width, self.frame_height = w, h
         print(f"  Resolution: {w}x{h}  FPS: {fps:.1f}  Frames: {total}")
+        
+        self._detect_letterbox(path)
+        if self.crop_rect:
+            x0, y0, x1, y1 = self.crop_rect
+            self.frame_width, self.frame_height = x1 - x0, y1 - y0
+            print(f"  Letterbox detected: using {self.frame_width}x{self.frame_height} content area")
+        
         return {'fps': fps, 'total_frames': total, 'width': w, 'height': h}
+    
+    def _detect_letterbox(self, path, samples=5, threshold=18):
+        """
+        Find the non-black content box, so pillar/letterboxed video does not
+        map its black bars onto the pitch.
+        """
+        self.crop_rect = None
+        if not HAS_CV2:
+            return
+        cap = cv2.VideoCapture(path)
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+        brightest = None
+        for k in range(samples):
+            if total:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, int(total * (k + 1) / (samples + 1)))
+            ok, frame = cap.read()
+            if not ok:
+                continue
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            brightest = gray if brightest is None else np.maximum(brightest, gray)
+        cap.release()
+        if brightest is None:
+            return
+        
+        rows = np.where(brightest.max(axis=1) > threshold)[0]
+        cols = np.where(brightest.max(axis=0) > threshold)[0]
+        if rows.size == 0 or cols.size == 0:
+            return
+        x0, x1 = int(cols[0]), int(cols[-1]) + 1
+        y0, y1 = int(rows[0]), int(rows[-1]) + 1
+        h, w = brightest.shape
+        # Only treat it as letterboxing if a meaningful border was trimmed
+        if (x1 - x0) < w * 0.98 or (y1 - y0) < h * 0.98:
+            if (x1 - x0) > w * 0.2 and (y1 - y0) > h * 0.2:
+                self.crop_rect = (x0, y0, x1, y1)
     
     def download_youtube(self, url, output_dir=None):
         """
@@ -827,6 +870,9 @@ class VideoAnalyzer:
             if processed >= max_frames:
                 break
             
+            if self.crop_rect:
+                x0, y0, x1, y1 = self.crop_rect
+                frame = frame[y0:y1, x0:x1]
             dets = self.detect_players(frame)
             frame_detections.append(dets)
             frame_indices.append(i)

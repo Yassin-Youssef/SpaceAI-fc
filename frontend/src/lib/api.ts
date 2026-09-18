@@ -448,6 +448,21 @@ export async function listDemoPlayers(): Promise<DemoPlayer[]> {
   return demoPlayersCache;
 }
 
+export interface DemoVideoInfo {
+  available: boolean; title: string; subtitle: string; author: string;
+  license: string; source_url: string; duration_s: number; resolution: string; note: string;
+}
+
+/** Metadata for the bundled sample clip */
+export async function getDemoVideoInfo(): Promise<DemoVideoInfo> {
+  return get<DemoVideoInfo>("/demo/video");
+}
+
+/** Run the bundled sample clip through the CV pipeline */
+export async function analyzeDemoVideo(): Promise<VideoResponse> {
+  return post<VideoResponse>("/demo/video/analyze", {});
+}
+
 /** Health check */
 export async function healthCheck(): Promise<HealthResponse> {
   return get<HealthResponse>("/health");

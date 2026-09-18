@@ -287,6 +287,13 @@ mapped to pitch coordinates. **ffmpeg is not needed** — the downloader request
 which is all the vision pipeline uses. YOLO weights (~6 MB) download automatically on first use.
 `GET /api/health` reports which optional modules are active.
 
+A **sample clip is bundled** (`data/demo_video/corner_kick.mp4`, 3.6 MB): an FC Utrecht corner kick from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:FC_Utrecht_takes_a_Corner.ogv) by Pel Laurens,
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), cropped and re-encoded. The Video tab has a
+**Track sample clip** button that runs it through the real YOLOv8 pipeline, so you can try video input
+without supplying footage. Detection and tracking are solid on it (10-15 players a frame); team
+assignment is approximate, since it is a zoomed corner where white shirts dominate.
+
 ### 5. Set up LLM (optional — enables Ask SpaceAI, Player Assessment, Compare, Explanation)
 ```bash
 # Get a key from https://openrouter.ai/
