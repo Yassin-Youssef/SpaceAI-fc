@@ -39,6 +39,9 @@ export function PlayerAssessment({ health }: { health: HealthResponse | null }) 
   const [showErrors, setShowErrors] = useState(false);
   const [demoPlayers, setDemoPlayers] = useState<DemoPlayer[]>([]);
   const [demoSource, setDemoSource] = useState<{ title: string; match: string; kind: string; note: string } | null>(null);
+  // Exact inputs a demo player was loaded with; the source badge is shown only if a run used them unchanged
+  const [demoSnapshot, setDemoSnapshot] = useState<string | null>(null);
+  const [resultSource, setResultSource] = useState<typeof demoSource>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,11 +85,14 @@ export function PlayerAssessment({ health }: { health: HealthResponse | null }) 
     setShowErrors(false);
     setMode("data");
     setDemoSource(dp ? { title: dp.name, match: dp.match_title, kind: dp.source.kind, note: dp.source.note } : null);
+    setDemoSnapshot(dp ? JSON.stringify({ b, s, m: "data" }) : null);
     if (run) void runAssessment({ ...b }, "data", s, DEMO_MANUAL);
     else toast.success(`${b.name} loaded`, { description: dp ? dp.match_title : "Sample stat line" });
   };
 
   const runAssessment = async (b = bio, m = mode, s = stats, man = manual) => {
+    const untouchedDemo = demoSnapshot !== null && JSON.stringify({ b, s, m }) === demoSnapshot;
+    setResultSource(untouchedDemo ? demoSource : null);
     setIsLoading(true);
     setView("results");
     try {
@@ -173,12 +179,12 @@ export function PlayerAssessment({ health }: { health: HealthResponse | null }) 
                   <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white/10 bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-black text-white shadow-[0_0_24px_rgba(0,217,255,0.35)]">{bio.number || "–"}</div>
                   <h3 className="text-center text-2xl font-bold text-white">{bio.name}</h3>
                   <p className="text-center font-semibold text-brand">{results.recommended_role}</p>
-                  {demoSource && (
+                  {resultSource && (
                     <div className="mt-3 flex flex-col items-center gap-1 text-center">
-                      <span className={cn("chip", demoSource.kind === "statsbomb" ? "border-success/40 bg-success/10 text-success" : "border-warning/40 bg-warning/10 text-warning")} title={demoSource.note}>
-                        {demoSource.kind === "statsbomb" ? "StatsBomb open data" : "Reconstructed stat line"}
+                      <span className={cn("chip", resultSource.kind === "statsbomb" ? "border-success/40 bg-success/10 text-success" : "border-warning/40 bg-warning/10 text-warning")} title={resultSource.note}>
+                        {resultSource.kind === "statsbomb" ? "StatsBomb open data" : "Reconstructed stat line"}
                       </span>
-                      <span className="text-[11px] text-text-muted">{demoSource.match}</span>
+                      <span className="text-[11px] text-text-muted">{resultSource.match}</span>
                     </div>
                   )}
                   <dl className="mt-5 space-y-2 text-sm">

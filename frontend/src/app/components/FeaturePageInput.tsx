@@ -139,10 +139,15 @@ export function FeaturePageInput({
       const res = await analyzeDemoVideo();
       if (!res.success || !res.tracking_data) throw new Error(res.message || "Sample clip could not be analysed.");
       setVideoFile(undefined); setYoutubeUrl("");
+      // Teams in the clip are colour clusters, not identified clubs: label them neutrally
+      // rather than inheriting names from whatever demo fixture was loaded before.
+      setTeamAName("Kit A"); setTeamBName("Kit B");
+      setTeamAColor(DEMO_TEAM_A_COLOR); setTeamBColor(DEMO_TEAM_B_COLOR);
+      setDemoMatch(undefined); setManualPasses(undefined);
       setResolved({ teamA: res.tracking_data.team_a, teamB: res.tracking_data.team_b, passes: [], note: res.message, source: "video" });
-      toast.success("Sample clip tracked", { description: (res.message || "").slice(0, 120) });
+      toast.success("Sample clip tracked", { id: "sample-clip", description: (res.message || "").slice(0, 120) });
     } catch (err) {
-      toast.error("Could not analyse the sample clip", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Could not analyse the sample clip", { id: "sample-clip", description: err instanceof Error ? err.message : undefined });
     } finally {
       setSampleBusy(false);
     }

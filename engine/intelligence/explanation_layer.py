@@ -190,29 +190,29 @@ class ExplanationLayer:
         
         if strengths:
             top_s = strengths[:2]
-            strength_text = f"{self.team_name}'s key strengths include "
-            strength_text += " and ".join(s['description'].lower() for s in top_s)
+            strength_text = f"{self.team_name}'s key strengths: "
+            strength_text += "; ".join(s['description'] for s in top_s)
             strength_text += ". "
             parts.append(strength_text)
         
         if weaknesses:
             top_w = weaknesses[:2]
             weakness_text = "However, there are concerns: "
-            weakness_text += "; ".join(w['description'].lower() for w in top_w)
+            weakness_text += "; ".join(w['description'] for w in top_w)
             weakness_text += ". "
             parts.append(weakness_text)
         
         if opportunities:
             top_o = opportunities[:1]
-            opp_text = f"An opportunity exists as "
-            opp_text += top_o[0]['description'].lower()
-            opp_text += ", which can be exploited. "
+            opp_text = "An opportunity to exploit: "
+            opp_text += top_o[0]['description']
+            opp_text += ". "
             parts.append(opp_text)
         
         if threats:
             top_t = threats[:2]
             threat_text = "The main threats to be aware of are: "
-            threat_text += " and ".join(t['description'].lower() for t in top_t)
+            threat_text += "; ".join(t['description'] for t in top_t)
             threat_text += ". "
             parts.append(threat_text)
         
@@ -240,15 +240,15 @@ class ExplanationLayer:
                 parts.append(f"{r['description']}. ")
         
         if medium:
-            parts.append("Additionally, ")
+            parts.append("Also recommended: ")
             for r in medium[:2]:
-                parts.append(f"{r['description'].lower()}. ")
+                parts.append(f"{r['description']}. ")
         
         if not high and not medium:
             low = [r for r in recs if r['priority'] == 'low']
             if low:
                 parts.append(
-                    f"Minor adjustments could include: {low[0]['description'].lower()}. "
+                    f"Minor adjustments could include: {low[0]['description']}. "
                 )
         
         return "".join(parts).strip()
