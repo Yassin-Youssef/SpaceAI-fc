@@ -53,7 +53,7 @@ export function Home({ user, recentAnalyses = [], onFeatureClick, onNavigate }: 
             <h1 className="text-3xl font-bold text-white sm:text-4xl">
               Welcome back, <span className="text-brand">{firstName}</span>
             </h1>
-            <p className="mt-1 text-text-secondary">Pick a feature, load the El Clásico demo, and let the engine read the game.</p>
+            <p className="mt-1 text-text-secondary">Pick a feature, load a real match from the demo menu, and let the engine read the game.</p>
           </div>
           <Button variant="secondary" icon={Info} onClick={() => onNavigate("about")}>How it works</Button>
         </motion.div>

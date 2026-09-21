@@ -499,9 +499,30 @@ def run_full_pipeline(
 
     swot = run_reasoning(analysis_data, team_a_name, team_b_name)
     recs = run_recommendations(swot, analysis_data, team_a_name, team_b_name)
+    # The template engine reads formations, passes, territory and press
+    # resistance from report_data; without it the report said "a unknown
+    # formation" and "50% vs 50%".
+    report_data = {
+        "team_a": {"name": team_a_name, "formation": analysis_data["formation_a"]["formation"]},
+        "team_b": {"name": team_b_name, "formation": analysis_data["formation_b"]["formation"]},
+        "pass_analysis": {
+            "total_passes": pn_result["total_passes"],
+            "key_distributor": pn_result["key_distributor"],
+        },
+        "space_analysis": {"overall": {
+            "team_a_control": sc_result["team_a_control"],
+            "team_b_control": sc_result["team_b_control"],
+        }},
+        "press_resistance": {
+            "press_resistance_score": pr_result["press_resistance_score"],
+            "pass_success_under_pressure": pr_result["pass_success_under_pressure"],
+            "escape_rate": pr_result["escape_rate"],
+        },
+    }
     explanation = run_explanation(
         mode="template",
         match_info=match_info,
+        report_data=report_data,
         swot_results=swot,
         recommendations=recs,
         team_name=team_a_name,
