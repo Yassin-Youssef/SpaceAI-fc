@@ -1,13 +1,13 @@
-# ⚽ SpaceAI FC
+# SpaceAI FC
 
-**Agentic tactical intelligence for football.** SpaceAI FC reads a match situation, understands its
-tactical structure, reasons about strengths and weaknesses, recommends what to change, and explains its
-thinking in the language a coaching staff uses.
+**Tactical intelligence for football.** Give SpaceAI FC eleven positions and the passes between them. It
+finds both formations, maps who controls each zone, scores how well a side plays through pressure, and tells
+the coaching staff what to change and why.
 
 It is a four-phase Python engine wrapped in a **FastAPI** backend and a **React + TypeScript** frontend,
 built around a robotics-inspired loop: **Sense → Understand → Reason → Act → Explain**.
 
-![SpaceAI FC dashboard](docs/screenshots/01-dashboard.png)
+![SpaceAI FC home page](docs/screenshots/01-home.png)
 
 - **12 features** covering passing, space, shape, pressing, patterns, strategy, scouting and simulation
 - **Real match demos** built from StatsBomb open data: one click analyses the 2022 World Cup final
@@ -22,78 +22,106 @@ built around a robotics-inspired loop: **Sense → Understand → Reason → Act
 Every feature is a slice of the same five-step pipeline. The screenshots below follow one real match,
 Argentina 3-3 France in the 2022 World Cup final, through each step.
 
-### 1. Sense — pick a match, or bring your own data
+### 1. Sense: pick a match, or bring your own data
 
-Load a real fixture from the demo menu, type positions in by hand, upload a dataset, or hand the engine
-video footage.
+The home page leads with real fixtures. Clicking one runs every phase of the engine on that match. Each
+feature also has a **Try demo** menu, and accepts positions typed by hand, an uploaded dataset, or video.
 
-![Demo fixture picker](docs/screenshots/02-demo-picker.png)
+![Pick a match](docs/screenshots/02-match-picker.png)
 
 Video goes through a real computer-vision pipeline: YOLOv8 detects players, a tracker follows them across
 frames, shirts are clustered into two teams, and positions are mapped onto the pitch. A licensed sample
-clip is bundled so this can be tried without footage.
+clip is bundled, so this can be tried without footage.
 
-![Video tracking on the bundled sample clip](docs/screenshots/05-video-tracking.png)
+![Video tracking on the bundled sample clip](docs/screenshots/06-video-tracking.png)
 
-### 2. Understand — structure, space and passing
+### 2. Understand: structure, space and passing
 
 The engine detects each side's shape, measures territorial control with Voronoi and influence models,
-builds a directed pass network, and scores press resistance.
+builds a directed pass network, and scores press resistance. Results open with a match band and the
+headline numbers.
 
 ![Full match results](docs/screenshots/03-results-summary.png)
 
 Detected shapes are *average* shapes over the match, so they can differ from the named line-up. Argentina
-read as 2-4-4 here because their full-backs spent the final in midfield; the UI shows both.
+read as 2-4-4 here because their full-backs spent the final in midfield; the app shows both.
 
-![Influence space control and formation detection](docs/screenshots/04-visualisations.png)
+![Detected formations and territorial control](docs/screenshots/04-formations.png)
 
-### 3. Reason and 4. Act — what matters, and what to change
+Every result comes with the engine's own visualisations: pass network, Voronoi and influence maps,
+formation lines and more. Click one to enlarge it, or download it.
+
+![Engine visualisations](docs/screenshots/05-visualisations.png)
+
+### 3. Reason and 4. Act: what matters, and what to change
 
 A 30-node tactical knowledge graph and a SWOT rule engine identify the situations in play, here a
 midfield overload and a single build-up route, then rank concrete adjustments by priority with the
-reasoning behind each.
+reasoning and expected effect of each.
 
 ![Strategy recommendations](docs/screenshots/07-strategy.png)
 
-### 5. Explain — a report a coach would read
+### 5. Explain: a report a coach would read
 
-Everything is written up as a match report. The template engine works offline; with an OpenRouter or
-Anthropic key, a language model writes the narrative instead.
+Everything is written up as a match report in three parts: what is happening, why it matters, and what
+should change. The template engine works offline; with an OpenRouter or Anthropic key, a language model
+writes it instead. The page always says which one wrote what you are reading.
 
 ![Tactical match report](docs/screenshots/08-report.png)
 
+**Ask SpaceAI** answers tactical questions. It refers to your last analysis when there is one, and falls back
+to the knowledge graph when no language model is configured.
+
+![Ask SpaceAI](docs/screenshots/09-ask.png)
+
 ### Beyond the match
 
-**Player Assessment** builds an attribute radar, infers the best role and writes a scouting report. Demo
-players use real stat lines counted from StatsBomb events, normalised per 90 minutes.
+**Player Assessment** builds an attribute radar, infers the best role for the player's position and writes a
+scouting report. Demo players use real stat lines counted from StatsBomb events, normalised per 90 minutes,
+and scout ratings use pace, shooting, passing, dribbling, defending and physical.
 
-![Player assessment radar](docs/screenshots/06-player-radar.png)
+![Player assessment radar](docs/screenshots/10-player-radar.png)
 
-**Simulation** plays two tactical presets against each other in a multi-agent small-sided match, with an
-animated replay. **Compare** runs two match-ups several times and reports which setup comes out ahead.
+**Simulation** plays two tactics against each other in a multi-agent 5v5 or 7v7 match, with a
+frame-by-frame replay.
 
-![Simulation replay](docs/screenshots/09-simulation.png)
+![Simulation replay](docs/screenshots/11-simulation.png)
+
+**Compare** simulates two match-ups several times each, says which setup comes out ahead, and explains the
+numbers in plain language.
+
+![Compare two match-ups](docs/screenshots/12-compare.png)
+
+### On a phone
+
+Every page works down to phone width, with a full-screen menu in place of the top navigation.
+
+<p>
+  <img src="docs/screenshots/13-mobile-home.png" alt="Home page on a phone" width="300" />
+  &nbsp;
+  <img src="docs/screenshots/14-mobile-menu.png" alt="Menu on a phone" width="300" />
+</p>
 
 ---
 
 ## Features
 
-| Feature | What it does |
-|---|---|
-| **Full Match Analysis** | Every engine phase in one run: visualisations, SWOT, recommendations and a written report |
-| **Pass Network** | Directed pass graph with degree, betweenness and eigenvector centrality, key distributor and weak links |
-| **Space Control** | Voronoi and Gaussian influence maps with zone-by-zone and midfield control |
-| **Formation Detection** | Clustering on player depth to read each side's shape, with confidence |
-| **Press Resistance** | Scores 0–100 how well a side plays through pressure, and flags vulnerable zones |
-| **Tactical Patterns** | Overlaps, compact blocks, wide overloads, high lines and low blocks |
-| **Strategy Recommendations** | Prioritised adjustments reasoned from SWOT and the knowledge graph |
-| **Tactical Explanation** | Natural-language match report, template or LLM |
-| **Ask SpaceAI** | Tactical Q&A, grounded in your last analysis when one exists |
-| **Player Assessment** | Attribute radar, best role and scouting report from stats, ratings or video |
-| **Compare** | Two tactical match-ups simulated side by side |
-| **Simulation** | Multi-agent 5v5 / 7v7 match with an animated replay |
+| Area | Feature | What it does |
+|---|---|---|
+| Analysis | **Full Match Analysis** | Every engine phase in one run: visualisations, SWOT, recommendations and a written report |
+| Analysis | **Pass Network** | Directed pass graph with degree, betweenness and eigenvector centrality, key distributor and weak links |
+| Analysis | **Space Control** | Voronoi and Gaussian influence maps with zone-by-zone and midfield control |
+| Analysis | **Formation Detection** | Clustering on player depth to read both sides' shapes, with confidence |
+| Analysis | **Press Resistance** | Scores 0–100 how well a side plays through pressure, and flags vulnerable zones |
+| Analysis | **Tactical Patterns** | Overlaps, compact blocks, wide overloads, high lines and low blocks, with the players involved |
+| Intelligence | **Strategy Recommendations** | High, medium and low priority adjustments reasoned from SWOT and the knowledge graph |
+| Intelligence | **Ask SpaceAI** | Tactical Q&A, grounded in your last analysis when one exists |
+| Intelligence | **Tactical Explanation** | Match report in three sections, from templates or a language model |
+| Advanced | **Player Assessment** | Attribute radar, best role and scouting report from stats, scout ratings or video |
+| Advanced | **Compare** | Two tactical match-ups simulated side by side, with a plain-language reading |
+| Advanced | **Simulation** | Multi-agent 5v5 / 7v7 match with a frame-by-frame replay |
 
-Every feature has a **Try Demo** button. Results can be exported as PNG, a Word report or a PDF summary.
+Every feature has a **Try demo** menu. Results can be exported as PNG, a Word report or a PDF summary.
 
 ### Demo fixtures
 
@@ -115,9 +143,26 @@ ten real stat lines from the same matches.
 
 | Method | How it works |
 |---|---|
-| **Manual entry** | Positions, passes and match info in a validated form with a live pitch preview |
+| **Manual entry** | Positions, passes and match info in a validated form, with a live pitch preview that draws the passes as you type |
 | **Video / YouTube** | YOLOv8 detection and tracking, automatic team clustering, letterbox cropping. Falls back to a clearly labelled synthetic snapshot if the vision packages are not installed |
 | **Dataset upload** | CSV or JSON, parsed server-side with clear errors. Templates can be downloaded from the app |
+
+---
+
+## Design
+
+The interface is built to read like football media rather than a generic dashboard:
+
+- **Light pages, black ink, heavy type.** Archivo at three widths: expanded black for headlines, condensed
+  for scoreboard numbers, normal for the interface. Newsreader, a serif, carries long reading such as
+  reports, chat answers and scouting notes.
+- **Black broadcast bands** for the big moments: the match picker, and the team band at the top of every
+  result.
+- **One colour per area:** green for Analysis, blue for Intelligence, yellow for Advanced. The colour follows
+  you through the navigation, tags, buttons and charts.
+- **Motion with a purpose:** spring page transitions, a sliding navigation indicator, skeleton loaders shaped
+  like the results they stand in for, and numbers that count up as they come into view. Reduced-motion
+  settings are respected, and every text colour passes WCAG AA contrast.
 
 ---
 
@@ -226,8 +271,9 @@ SpaceAI-fc/
 ├── engine/                 the four-phase analysis engine
 ├── frontend/               React + TypeScript + Tailwind production UI
 │   └── src/
-│       ├── app/components/ pages, shared primitives, result renderers
-│       └── lib/            API client, demo data, motion presets, types
+│       ├── app/components/ pages, top navigation, shared primitives, result renderers
+│       ├── lib/            API client, feature catalogue, demo data, motion presets, types
+│       └── styles/         design tokens and fonts
 ├── data/
 │   ├── demo_matches/       bundled real fixtures and player stat lines
 │   └── demo_video/         licensed sample clip and its attribution
@@ -249,7 +295,7 @@ SpaceAI-fc/
 | Engine | Python, NumPy, pandas, SciPy, NetworkX, scikit-learn, matplotlib, mplsoccer |
 | Vision and learning | YOLOv8 (Ultralytics), OpenCV, yt-dlp, Gymnasium, Stable-Baselines3 |
 | API | FastAPI, Pydantic, Uvicorn, slowapi, python-docx |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Motion, Recharts |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, Radix UI, Motion, Recharts |
 | Data and AI | StatsBomb open data (statsbombpy), OpenRouter / Anthropic, Supabase |
 
 ---
@@ -265,6 +311,7 @@ SpaceAI-fc/
   networks are not.
 - **Average positions are not snapshots.** Pattern detection on real fixtures reads calmer than it would on
   a single moment of play.
+- **The engine's chart images keep their own dark styling**, separate from the interface.
 - **Not deployed yet.** The app runs locally.
 
 ---
