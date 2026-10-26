@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { animate, useReducedMotion } from "motion/react";
+import { animate, useInView, useReducedMotion } from "motion/react";
+import { EASE_OUT } from "../../../lib/motion";
 
 interface AnimatedNumberProps {
   value: number;
@@ -13,18 +14,20 @@ interface AnimatedNumberProps {
 }
 
 /**
- * Smoothly counts from the previous value to the new one.
- * Respects the user's reduced-motion preference.
+ * Counts up from 0 the first time the number scrolls into view, then
+ * from the previous value on later changes. Respects reduced motion.
  */
 export function AnimatedNumber({
   value,
   decimals = 0,
   suffix = "",
   prefix = "",
-  duration = 1.1,
+  duration = 0.5,
   className,
 }: AnimatedNumberProps) {
   const reduce = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "0px 0px -40px 0px" });
   const [display, setDisplay] = useState(reduce ? value : 0);
   const previous = useRef(reduce ? value : 0);
 
@@ -34,20 +37,21 @@ export function AnimatedNumber({
       previous.current = value;
       return;
     }
+    if (!inView) return;
     const controls = animate(previous.current, value, {
       duration,
-      ease: [0.22, 1, 0.36, 1],
+      ease: EASE_OUT,
       onUpdate: (v) => setDisplay(v),
       onComplete: () => {
         previous.current = value;
       },
     });
     return () => controls.stop();
-  }, [value, duration, reduce]);
+  }, [value, duration, reduce, inView]);
 
   const text = Number.isFinite(display) ? display.toFixed(decimals) : "–";
   return (
-    <span className={className} style={{ fontVariantNumeric: "tabular-nums" }}>
+    <span ref={ref} className={className} style={{ fontVariantNumeric: "tabular-nums" }}>
       {prefix}
       {text}
       {suffix}

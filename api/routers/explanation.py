@@ -145,8 +145,11 @@ async def _generate_llm_report(match_info, report_data, swot, recs, team_name, o
 
     prompt = (
         "You are writing a post-match tactical briefing for a professional coaching staff. "
-        "Using ONLY the analysis below, write 4 short paragraphs: match overview, tactical "
-        "situation, strengths and vulnerabilities, and specific recommendations. "
+        "Using ONLY the analysis below, write three sections, each under a markdown heading "
+        "on its own line, exactly: '## What is happening' (shape, possession and territory), "
+        "'## Why it matters' (strengths and vulnerabilities this creates), and "
+        "'## What should change' (specific, prioritised adjustments). One or two short "
+        "paragraphs per section, separated by blank lines. "
         "Reference the real formations, players and numbers. Do not invent statistics.\n\n"
         f"{data_summary}"
     )

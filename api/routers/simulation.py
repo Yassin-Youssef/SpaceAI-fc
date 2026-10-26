@@ -137,16 +137,87 @@ async def simulation_compare(req: SimulationCompareRequest):
         else:
             verdict = "Both matchups are evenly balanced."
 
+        insights, insights_mode = await _compare_insights(m1, m2, verdict, name, req.team_size)
+
         return SimulationCompareResponse(
             success=True,
             matchup_1=m1,
             matchup_2=m2,
             verdict=verdict,
+            insights=insights,
+            insights_mode=insights_mode,
         )
     except ImportError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+def _template_insights(m1: dict, m2: dict, name, team_size: int) -> str:
+    """Deterministic reading of two averaged match-ups."""
+    def line(n, m):
+        diff = m["avg_goals_a"] - m["avg_goals_b"]
+        return (
+            f"In match-up {n}, {name(m['tactic_a'])} against {name(m['tactic_b'])} averaged "
+            f"{m['avg_goals_a']:.2f} goals to {m['avg_goals_b']:.2f} (difference {diff:+.2f}) over "
+            f"{m['runs']} run{'s' if m['runs'] != 1 else ''}, with {m['avg_possession_a']:.1f}% possession and "
+            f"{m['avg_territorial_control_a']:.1f}% territory for the first side."
+        )
+
+    d1 = m1["avg_goals_a"] - m1["avg_goals_b"]
+    d2 = m2["avg_goals_a"] - m2["avg_goals_b"]
+    poss_gap = m1["avg_possession_a"] - m2["avg_possession_a"]
+    parts = [line(1, m1), line(2, m2)]
+    if abs(d1 - d2) < 0.25:
+        parts.append("The goal margins are within a quarter of a goal, so the two setups are effectively level on outcome.")
+    else:
+        better, worse = (1, 2) if d1 > d2 else (2, 1)
+        parts.append(f"Match-up {better} converts its approach into goals more reliably than match-up {worse}.")
+    # The verdict scores goal difference plus 0.05 per possession point above 50%,
+    # so it can prefer a different match-up from the goals alone; say why.
+    s1 = d1 + (m1["avg_possession_a"] - 50) * 0.05
+    s2 = d2 + (m2["avg_possession_a"] - 50) * 0.05
+    goals_pick = 1 if d1 > d2 else 2 if d2 > d1 else 0
+    verdict_pick = 1 if s1 > s2 else 2 if s2 > s1 else 0
+    if goals_pick and verdict_pick and goals_pick != verdict_pick:
+        parts.append(
+            f"The verdict still favours match-up {verdict_pick}: it scores goal difference plus 0.05 for every "
+            f"point of possession above 50% ({s1:+.2f} against {s2:+.2f}), so ball control outweighs the "
+            "small goal margin here."
+        )
+    if abs(poss_gap) >= 5:
+        more = 1 if poss_gap > 0 else 2
+        parts.append(
+            f"Match-up {more} keeps the ball noticeably more ({abs(poss_gap):.1f} points of possession), "
+            "which matters if game control is the aim rather than the scoreline."
+        )
+    if min(m1["runs"], m2["runs"]) < 5:
+        parts.append(f"With fewer than five runs per match-up in a {team_size}v{team_size} model, treat small differences as noise and re-run with more runs.")
+    return " ".join(parts)
+
+
+async def _compare_insights(m1: dict, m2: dict, verdict: str, name, team_size: int):
+    """LLM commentary when a key is configured, otherwise the template."""
+    from api.services.llm_service import has_llm, ask_llm
+    template = _template_insights(m1, m2, name, team_size)
+    if not has_llm():
+        return template, "template"
+    prompt = (
+        "You are advising a football coaching staff. Two tactical match-ups were each simulated "
+        f"several times in a {team_size}v{team_size} multi-agent model. Using ONLY these numbers, write "
+        "two short paragraphs: what the numbers show, and which setup to prefer and when. "
+        "Do not invent statistics.\n\n"
+        f"Match-up 1: {name(m1['tactic_a'])} vs {name(m1['tactic_b'])}: {m1}\n"
+        f"Match-up 2: {name(m2['tactic_a'])} vs {name(m2['tactic_b'])}: {m2}\n"
+        f"Engine verdict: {verdict}"
+    )
+    try:
+        answer, mode = await ask_llm(prompt, context=None)
+        if mode != "knowledge_graph" and answer and answer.strip():
+            return answer.strip(), mode
+    except Exception:
+        pass
+    return template, "template"
 
 
 # ── RL Coach ──────────────────────────────────────────────────────

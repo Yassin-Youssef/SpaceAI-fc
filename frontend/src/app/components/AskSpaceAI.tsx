@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from "motion/react";
-import { Send, Sparkles, MessageSquare, Trash2, Link2, Link2Off, User as UserIcon } from "lucide-react";
+import { ArrowUp, Trash2, Link2, Link2Off, AlertTriangle, CornerDownRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { askSpaceAI, isLLMConfigured } from "../../lib/llm";
 import { askBackend } from "../../lib/api";
 import type { HealthResponse } from "../../lib/types";
 import { Markdown } from "./common/Markdown";
-import { Button } from "./common/Primitives";
+import { Skeleton } from "./common/Primitives";
 import { cn } from "./ui/utils";
-import { pressable } from "../../lib/motion";
+import { EASE_OUT, pressable } from "../../lib/motion";
 
 interface Message {
   id: string;
@@ -20,7 +20,7 @@ interface Message {
 
 const WELCOME: Message = {
   id: "welcome",
-  text: "Hello! I'm **SpaceAI**, your tactical analyst. Ask me about formations, pressing structures, build-up patterns or how to beat a specific setup.",
+  text: "Ask about formations, pressing, build-up play or how to beat a particular setup. If you have run an analysis, answers can refer to it.",
   sender: "ai",
   timestamp: Date.now(),
 };
@@ -28,15 +28,24 @@ const WELCOME: Message = {
 const EXAMPLES = [
   "How do I beat a low block with a 4-3-3?",
   "What are the weaknesses of a 4-2-3-1?",
-  "Which formations thrive under a high press?",
+  "Which formations cope best with a high press?",
   "Explain half-space overloads",
   "When should full-backs invert?",
 ];
+
+const MODE_LABEL: Record<string, string> = {
+  openrouter: "OpenRouter",
+  "openrouter (browser)": "OpenRouter, in the browser",
+  anthropic: "Anthropic",
+  knowledge_graph: "Knowledge graph",
+};
 
 interface AskSpaceAIProps {
   health: HealthResponse | null;
   context: Record<string, unknown> | null;
 }
+
+const enter = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25, ease: EASE_OUT } };
 
 export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -56,6 +65,7 @@ export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
 
   const browserLLM = isLLMConfigured();
   const backendLLM = Boolean(health?.llm_available);
+  const source = browserLLM ? "OpenRouter, in the browser" : backendLLM ? `${health?.llm_provider ?? "Language model"} via the backend` : "Knowledge graph (no API key set)";
 
   // Questions grounded in the last analysis the user ran
   const contextQuestions: string[] = (() => {
@@ -70,13 +80,13 @@ export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
     const qs: string[] = [];
     if (fa) qs.push(`Why does ${teamA}'s average shape read as ${fa}?`);
     if (fa && fb) qs.push(`How should ${teamB} in a ${fb} counter ${teamA}'s ${fa}?`);
-    if (typeof press === "number") qs.push(`${teamA} scored ${Math.round(press)}/100 for press resistance — what does that mean for their build-up?`);
+    if (typeof press === "number") qs.push(`${teamA} scored ${Math.round(press)}/100 for press resistance. What does that mean for their build-up?`);
     if (c.match) qs.push(`Summarise the tactical story of ${c.match}.`);
     return qs.slice(0, 4);
   })();
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isTyping]);
 
   useEffect(() => {
@@ -108,11 +118,11 @@ export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
         answer = res.answer;
         mode = res.mode;
       }
-      setMessages((m) => [...m, { id: crypto.randomUUID(), text: answer ?? "I couldn't generate a response. Please try again.", sender: "ai", mode, timestamp: Date.now() }]);
+      setMessages((m) => [...m, { id: crypto.randomUUID(), text: answer ?? "No answer came back. Try asking again.", sender: "ai", mode, timestamp: Date.now() }]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Connection error.";
-      toast.error("SpaceAI is unavailable", { description: message });
-      setMessages((m) => [...m, { id: crypto.randomUUID(), text: `⚠ ${message}`, sender: "ai", mode: "error", timestamp: Date.now() }]);
+      const message = err instanceof Error ? err.message : "Could not reach the engine.";
+      toast.error("SpaceAI could not answer", { description: message });
+      setMessages((m) => [...m, { id: crypto.randomUUID(), text: message, sender: "ai", mode: "error", timestamp: Date.now() }]);
     } finally {
       setIsTyping(false);
     }
@@ -123,100 +133,84 @@ export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
     toast.success("Conversation cleared");
   };
 
+  const fresh = messages.length <= 1;
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="relative border-b border-white/10 px-4 py-4 sm:px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-surface-2/70 to-transparent" />
-        <div className="relative mx-auto flex max-w-4xl items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-[0_0_30px_rgba(123,97,255,0.45)]">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
+      <div className="shrink-0 border-b border-line px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-white sm:text-2xl">Ask SpaceAI</h1>
-            <p className="truncate text-sm text-text-secondary">Your tactical analyst · {browserLLM ? "OpenRouter (browser)" : backendLLM ? `${health?.llm_provider} via backend` : "knowledge-graph mode"}</p>
+            <h1 className="text-2xl text-text-primary sm:text-3xl">Ask SpaceAI</h1>
+            <p className="truncate text-sm text-text-muted">Answers from: {source}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setUseContext((v) => !v)}
-              disabled={!context}
-              title={context ? (useContext ? "Answers reference your last analysis" : "Ignoring your last analysis") : "Run an analysis to give SpaceAI context"}
-              className={cn("chip transition-colors", !context ? "border-white/10 bg-white/5 text-text-muted" : useContext ? "border-brand/40 bg-brand/15 text-brand" : "border-white/10 bg-white/5 text-text-secondary")}
-            >
-              {useContext && context ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{context ? "Last analysis" : "No context"}</span>
-            </button>
-            <Button variant="ghost" size="sm" icon={Trash2} onClick={clear} aria-label="Clear conversation" />
-          </div>
+          <button
+            type="button"
+            onClick={() => setUseContext((v) => !v)}
+            disabled={!context}
+            aria-pressed={Boolean(context) && useContext}
+            title={context ? (useContext ? "Answers refer to your last analysis" : "Answers ignore your last analysis") : "Run an analysis to give SpaceAI something to refer to"}
+            className={cn(
+              "press inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-sm",
+              !context ? "border-line text-text-muted" : useContext ? "border-section/60 text-section" : "border-line-strong text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {useContext && context ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{context ? (useContext ? "Using last analysis" : "Not using last analysis") : "No analysis yet"}</span>
+          </button>
+          <button type="button" onClick={clear} className="press rounded-md p-2 text-text-muted hover:bg-surface-2 hover:text-text-primary" aria-label="Clear conversation" title="Clear conversation">
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-        <div className="mx-auto max-w-4xl space-y-5">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-3xl space-y-6">
           <AnimatePresence initial={false}>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                layout
-                initial={{ opacity: 0, y: 16, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.25 }}
-                className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}
-              >
-                <div className={cn("flex max-w-[88%] gap-3 sm:max-w-[80%]", message.sender === "user" && "flex-row-reverse")}>
-                  <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", message.sender === "ai" ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-[0_0_16px_rgba(123,97,255,0.35)]" : "bg-brand/20 text-brand")}>
-                    {message.sender === "ai" ? <Sparkles className="h-4 w-4 text-white" /> : <UserIcon className="h-4 w-4" />}
+            {messages.map((message) =>
+              message.sender === "user" ? (
+                <motion.div key={message.id} {...enter} className="flex justify-end">
+                  <div className="max-w-[85%] rounded-md border border-line-strong bg-surface-2 px-4 py-2.5 text-text-primary">
+                    <Markdown text={message.text} className="text-base [&_p]:my-0" />
                   </div>
-                  <div className={cn("rounded-2xl px-4 py-3", message.sender === "user" ? "border border-brand/40 bg-gradient-to-br from-cyan-500/20 to-blue-600/20" : "border border-white/10 bg-white/5")}>
-                    <Markdown text={message.text} className="text-[15px] text-white/90" />
-                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-text-muted">
-                      {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      {message.mode && message.mode !== "error" && <span className="rounded-full bg-white/5 px-1.5 py-0.5">{message.mode.replace("_", " ")}</span>}
-                    </div>
+                </motion.div>
+              ) : (
+                <motion.div key={message.id} {...enter} className="max-w-[92%]">
+                  <div className="mb-1 flex items-center gap-2 text-xs text-text-muted">
+                    <span className={cn("font-medium", message.mode === "error" ? "text-danger" : "text-section")}>SpaceAI</span>
+                    {message.mode && message.mode !== "error" && <span>{MODE_LABEL[message.mode] ?? message.mode.replace(/_/g, " ")}</span>}
+                    <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  {message.mode === "error" ? (
+                    <p className="flex items-start gap-2 text-base text-danger"><AlertTriangle className="mt-1 h-4 w-4 shrink-0" />{message.text}</p>
+                  ) : (
+                    <Markdown text={message.text} className="font-serif text-lg text-text-primary [&>p:first-child]:mt-0 [&_h3]:font-sans" />
+                  )}
+                </motion.div>
+              )
+            )}
           </AnimatePresence>
 
           {isTyping && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-              <div className="flex gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500"><Sparkles className="h-4 w-4 text-white" /></div>
-                <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  {[0, 0.2, 0.4].map((d) => (
-                    <motion.span key={d} className="h-2 w-2 rounded-full bg-brand" animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ duration: 1, repeat: Infinity, delay: d }} />
-                  ))}
-                </div>
-              </div>
+            <motion.div {...enter} className="max-w-md space-y-2" aria-live="polite" aria-label="SpaceAI is answering">
+              <div className="text-xs font-medium text-section">SpaceAI</div>
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-4/5" />
+              <Skeleton className="h-3.5 w-3/5" />
             </motion.div>
           )}
 
-          {contextQuestions.length > 0 && !isTyping && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="pt-2">
-              <div className="mb-2 flex items-center gap-2 text-sm text-text-muted"><Link2 className="h-4 w-4 text-brand" /> About your last analysis{context && (context as Record<string, unknown>).match ? ` · ${(context as Record<string, unknown>).match as string}` : ""}</div>
-              <div className="flex flex-wrap gap-2">
-                {contextQuestions.map((q, i) => (
-                  <motion.button key={q} {...pressable} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.25 + i * 0.05 }} onClick={() => { setUseContext(true); void send(q); }} className="rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm text-brand transition-colors hover:bg-brand/20">
-                    {q}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {messages.length <= 1 && !isTyping && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="pt-2">
-              <div className="mb-2 flex items-center gap-2 text-sm text-text-muted"><MessageSquare className="h-4 w-4" /> Try one of these</div>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLES.map((q, i) => (
-                  <motion.button key={q} {...pressable} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 + i * 0.06 }} onClick={() => send(q)} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-text-secondary transition-colors hover:border-brand/40 hover:text-brand">
-                    {q}
-                  </motion.button>
-                ))}
-              </div>
+          {!isTyping && (contextQuestions.length > 0 || fresh) && (
+            <motion.div {...enter} className="space-y-5 pt-2">
+              {contextQuestions.length > 0 && (
+                <SuggestionList
+                  title={`About your last analysis${context && (context as Record<string, unknown>).match ? `: ${(context as Record<string, unknown>).match as string}` : ""}`}
+                  items={contextQuestions}
+                  onPick={(q) => { setUseContext(true); void send(q); }}
+                />
+              )}
+              {fresh && <SuggestionList title="Or try one of these" items={EXAMPLES} onPick={(q) => void send(q)} />}
             </motion.div>
           )}
           <div ref={endRef} />
@@ -224,37 +218,50 @@ export function AskSpaceAI({ health, context }: AskSpaceAIProps) {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-white/10 p-4 sm:p-5">
-        <div className="mx-auto max-w-4xl">
-          <div className="flex items-end gap-3">
+      <div className="shrink-0 border-t border-line bg-surface-1 px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <div className="flex items-end gap-2">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => { setInput(e.target.value); autoGrow(); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(input); } }}
-              placeholder="Ask about tactics, formations, strategies… (Enter to send, Shift+Enter for a new line)"
+              placeholder="Ask a tactical question"
+              aria-label="Your question"
               rows={1}
-              className="field flex-1 resize-none rounded-xl px-4 py-3 text-[15px]"
+              className="field flex-1 resize-none py-2.5 text-base"
             />
             <motion.button
               {...pressable}
               onClick={() => send(input)}
               disabled={!input.trim() || isTyping}
               aria-label="Send"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(0,217,255,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-section-fill text-section-on transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Send className="h-5 w-5" />
+              <ArrowUp className="h-5 w-5" />
             </motion.button>
           </div>
-          <p className={cn("mt-3 rounded-lg border px-3 py-2 text-xs", browserLLM || backendLLM ? "border-success/20 bg-success/10 text-success/90" : "border-warning/20 bg-warning/10 text-warning/90")}>
-            {browserLLM
-              ? "OpenRouter connected in the browser — full AI answers enabled."
-              : backendLLM
-              ? `Backend LLM (${health?.llm_provider}) connected — full AI answers enabled.`
-              : "Knowledge-graph mode: ask about formations and situations. Add OPENROUTER_API_KEY or ANTHROPIC_API_KEY to the backend for open-ended answers."}
-          </p>
+          <p className="mt-2 text-xs text-text-muted">Enter to send, Shift+Enter for a new line.{!browserLLM && !backendLLM && " Add OPENROUTER_API_KEY or ANTHROPIC_API_KEY to the backend for open-ended answers."}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SuggestionList({ title, items, onPick }: { title: string; items: string[]; onPick: (q: string) => void }) {
+  return (
+    <div>
+      <div className="mb-2 text-sm text-text-muted">{title}</div>
+      <ul className="divide-y divide-line overflow-hidden rounded-md border border-line">
+        {items.map((q) => (
+          <li key={q}>
+            <button type="button" onClick={() => onPick(q)} className="group flex w-full items-center gap-3 bg-surface-1 px-4 py-2.5 text-left text-sm text-text-secondary transition-colors duration-150 hover:bg-surface-2 hover:text-text-primary">
+              <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-text-muted group-hover:text-section" />
+              {q}
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

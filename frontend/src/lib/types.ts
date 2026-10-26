@@ -318,6 +318,9 @@ export interface SimulationCompareResponse {
   matchup_1: MatchupSummary;
   matchup_2: MatchupSummary;
   verdict: string;
+  /** Plain-language reading of the numbers; insights_mode is "template" or the LLM provider. */
+  insights?: string | null;
+  insights_mode?: string | null;
   error?: string | null;
 }
 

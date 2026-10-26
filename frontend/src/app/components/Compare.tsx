@@ -1,20 +1,24 @@
 import { motion } from "motion/react";
-import { GitCompare, Play, ArrowLeft, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeftRight, Play, ArrowLeft, RefreshCw, Trophy, Scale } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { compareSimulations } from "../../lib/api";
 import type { SimulationCompareResponse, SimulationCompareRequest, MatchupSummary } from "../../lib/types";
 import { TACTICS, COMPARE_PRESETS } from "../../lib/demo";
 import { PresetPicker, type PresetItem } from "./common/PresetPicker";
-import { Page, PageHeader, GlassCard, Button, ResultsSkeleton } from "./common/Primitives";
+import { Page, PageHeader, ResultsHeader, Panel, Button, ResultsSkeleton, LoadSwap, EmptyState } from "./common/Primitives";
 import { AnimatedNumber } from "./common/AnimatedNumber";
+import { Markdown } from "./common/Markdown";
+import { RangeField } from "./common/RangeField";
 import { cn } from "./ui/utils";
+import { EASE_OUT } from "../../lib/motion";
 
 const label = (id: string) => TACTICS.find((t) => t.id === id)?.label ?? id;
 
 export function Compare() {
   const [view, setView] = useState<"input" | "results">("input");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [teamSize, setTeamSize] = useState(5);
   const [m1, setM1] = useState({ a: "possession", b: "low_block" });
   const [m2, setM2] = useState({ a: "high_press", b: "counter_attack" });
@@ -28,21 +32,24 @@ export function Compare() {
       return;
     }
     setIsLoading(true);
+    setError(null);
     setView("results");
     try {
       const data: SimulationCompareRequest = { team_size: teamSize, tactic_a: m1.a, tactic_b: m1.b, tactic_a2: m2.a, tactic_b2: m2.b, runs, steps_per_run: steps, ...override };
       const res = await compareSimulations(data);
       setResults(res);
-      toast.success("Comparison complete");
+      toast.success("Comparison finished");
     } catch (err) {
-      toast.error("Comparison failed", { description: err instanceof Error ? err.message : undefined });
-      setView("input");
+      const message = err instanceof Error ? err.message : "The comparison did not finish.";
+      setError(message);
+      setResults(null);
+      toast.error("Comparison failed", { description: message });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const presetItems: PresetItem[] = COMPARE_PRESETS.map((p) => ({ id: p.id, title: p.title, subtitle: p.subtitle, kind: "preset", meta: `${p.runs} runs · ${p.team_size}v${p.team_size}` }));
+  const presetItems: PresetItem[] = COMPARE_PRESETS.map((p) => ({ id: p.id, title: p.title, subtitle: p.subtitle, kind: "preset", meta: `${p.runs} runs each, ${p.team_size}v${p.team_size}` }));
   const applyPreset = (item: PresetItem, runIt: boolean) => {
     const p = COMPARE_PRESETS.find((x) => x.id === item.id) ?? COMPARE_PRESETS[0];
     setM1(p.m1); setM2(p.m2); setRuns(p.runs); setSteps(p.steps); setTeamSize(p.team_size);
@@ -54,36 +61,52 @@ export function Compare() {
     const winner = results ? (results.verdict.startsWith("Matchup 1") ? 1 : results.verdict.startsWith("Matchup 2") ? 2 : 0) : 0;
     return (
       <Page>
-        <div className="space-y-5">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-            <button type="button" onClick={() => setView("input")} className="rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary hover:bg-white/10 hover:text-white" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
-            <div>
-              <div className="eyebrow">Compare</div>
-              <h2 className="text-xl font-bold text-white sm:text-2xl">Side-by-side match-ups</h2>
-            </div>
-          </motion.div>
-
-          {isLoading && <ResultsSkeleton message={`Averaging ${runs} runs per match-up…`} />}
-
-          {!isLoading && results && (
-            <>
-              <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="glass-brand flex items-center gap-4 p-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-[#1a1200] shadow-[0_0_24px_rgba(255,193,7,0.4)]"><Trophy className="h-6 w-6" /></div>
-                <div>
-                  <div className="eyebrow">Verdict</div>
-                  <div className="text-lg font-bold text-white">{results.verdict}</div>
+        <ResultsHeader
+          context="Compare"
+          title={`Two match-ups, ${results?.matchup_1.runs ?? runs} runs each`}
+          onBack={() => setView("input")}
+          right={<Button variant="ghost" icon={RefreshCw} onClick={() => run()} disabled={isLoading}>Run again</Button>}
+        />
+        <div className="mt-6">
+          <LoadSwap loading={isLoading} skeleton={<ResultsSkeleton variant="compare" message={`Simulating each match-up ${runs} times…`} />}>
+            {error || !results ? (
+              <EmptyState
+                icon={ArrowLeftRight}
+                title="The comparison did not finish"
+                description={error ?? "No results came back."}
+                action={<div className="flex gap-2"><Button icon={RefreshCw} onClick={() => run()}>Try again</Button><Button variant="secondary" icon={ArrowLeft} onClick={() => setView("input")}>Change match-ups</Button></div>}
+              />
+            ) : (
+              <div className="space-y-6">
+                <div className="tile flex items-start gap-4 border-l-2 border-l-section p-5">
+                  {winner ? <Trophy className="mt-1 h-5 w-5 shrink-0 text-section" /> : <Scale className="mt-1 h-5 w-5 shrink-0 text-section" />}
+                  <div>
+                    <div className="text-sm text-text-muted">Verdict</div>
+                    <div className="font-display text-2xl font-semibold text-text-primary">{readableVerdict(results.verdict)}</div>
+                  </div>
                 </div>
-              </motion.div>
-              <div className="grid gap-5 lg:grid-cols-2">
-                <MatchupCard n={1} m={results.matchup_1} winner={winner === 1} accent="#00d9ff" />
-                <MatchupCard n={2} m={results.matchup_2} winner={winner === 2} accent="#7b61ff" />
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <MatchupCard n={1} m={results.matchup_1} winner={winner === 1} />
+                  <MatchupCard n={2} m={results.matchup_2} winner={winner === 2} />
+                </div>
+
+                {results.insights && (
+                  <Panel>
+                    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                      <h2 className="text-2xl text-text-primary">What the numbers say</h2>
+                      <span className="chip border-line-strong text-text-secondary">{results.insights_mode === "template" ? "Template, from the numbers" : "Language model"}</span>
+                    </div>
+                    <Markdown text={results.insights} className="font-serif max-w-[70ch] text-lg text-text-primary" />
+                  </Panel>
+                )}
+
+                <div className="flex flex-wrap gap-2 border-t border-line pt-5">
+                  <Button variant="secondary" icon={ArrowLeft} onClick={() => setView("input")}>Change match-ups</Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" icon={ArrowLeft} onClick={() => setView("input")}>Change match-ups</Button>
-                <Button variant="ghost" icon={Sparkles} onClick={() => run()}>Re-run</Button>
-              </div>
-            </>
-          )}
+            )}
+          </LoadSwap>
         </div>
       </Page>
     );
@@ -91,89 +114,105 @@ export function Compare() {
 
   return (
     <Page width="max-w-5xl">
-      <div className="space-y-5">
-        <PageHeader
-          icon={GitCompare}
-          eyebrow="Advanced"
-          title="Compare Match-ups"
-          description="Simulate two tactical pairings several times each and see which setup comes out ahead."
-          actions={<PresetPicker items={presetItems} storageKey="spaceai.comparePreset" onRun={(i) => applyPreset(i, true)} onLoad={(i) => applyPreset(i, false)} disabled={isLoading} footer="Each preset answers one tactical question by simulating two match-ups several times." />}
-        />
-        <div className="grid gap-5 md:grid-cols-2">
-          <MatchupEditor n={1} accent="#00d9ff" value={m1} onChange={setM1} />
-          <MatchupEditor n={2} accent="#7b61ff" value={m2} onChange={setM2} />
-        </div>
-        <GlassCard>
-          <h3 className="mb-4 text-base font-bold text-white">Settings</h3>
-          <div className="grid gap-5 sm:grid-cols-3">
-            <Slider label={`Team size · ${teamSize}v${teamSize}`} min={5} max={7} value={teamSize} onChange={setTeamSize} />
-            <Slider label={`Runs per match-up · ${runs}`} min={1} max={10} value={runs} onChange={setRuns} />
-            <Slider label={`Steps per run · ${steps}`} min={100} max={1000} step={50} value={steps} onChange={setSteps} />
-          </div>
-        </GlassCard>
-        <Button variant="success" size="lg" block icon={Play} loading={isLoading} onClick={() => run()}>Run comparison</Button>
+      <PageHeader
+        area="Advanced"
+        title="Compare"
+        description="Simulate two tactical match-ups several times each and see which setup comes out ahead, and why."
+        actions={<PresetPicker items={presetItems} storageKey="spaceai.comparePreset" onRun={(i) => applyPreset(i, true)} onLoad={(i) => applyPreset(i, false)} disabled={isLoading} heading="Comparison presets" footer="Each preset answers one tactical question by simulating two match-ups several times." />}
+      />
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
+        <MatchupEditor n={1} value={m1} onChange={setM1} />
+        <MatchupEditor n={2} value={m2} onChange={setM2} />
       </div>
+      <Panel className="mt-5">
+        <h3 className="mb-4 text-lg text-text-primary">Simulation settings</h3>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <RangeField label="Team size" display={`${teamSize}v${teamSize}`} min={5} max={7} value={teamSize} onChange={setTeamSize} />
+          <RangeField label="Runs per match-up" min={1} max={10} value={runs} onChange={setRuns} />
+          <RangeField label="Steps per run" min={100} max={1000} step={50} value={steps} onChange={setSteps} />
+        </div>
+        <p className="mt-4 text-sm text-text-muted">More runs smooth out randomness. Ten runs of 1,000 steps can take around a minute.</p>
+      </Panel>
+      <Button size="lg" block icon={Play} loading={isLoading} onClick={() => run()} className="mt-5">Run comparison</Button>
     </Page>
   );
 }
 
-function MatchupEditor({ n, accent, value, onChange }: { n: number; accent: string; value: { a: string; b: string }; onChange: (v: { a: string; b: string }) => void }) {
+function readableVerdict(v: string): string {
+  return v.replace(/^Matchup (\d)/, "Match-up $1").replace("Both matchups", "Both match-ups");
+}
+
+function MatchupEditor({ n, value, onChange }: { n: number; value: { a: string; b: string }; onChange: (v: { a: string; b: string }) => void }) {
   return (
-    <GlassCard>
-      <div className="mb-3 flex items-center gap-2 text-base font-bold text-white"><span className="h-3 w-3 rounded-full" style={{ background: accent }} />Match-up {n}</div>
-      <div className="space-y-3">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-secondary">Team A tactic</span>
+    <Panel>
+      <div className="mb-4 flex items-baseline gap-3">
+        <span className="font-display text-4xl font-semibold leading-none text-section">{n}</span>
+        <h3 className="text-lg text-text-primary">Match-up {n}</h3>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+        <label className="block min-w-0">
+          <span className="label">Side A</span>
           <select className="field" value={value.a} onChange={(e) => onChange({ ...value, a: e.target.value })}>{TACTICS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
         </label>
-        <div className="text-center text-xs font-bold uppercase tracking-widest text-text-muted">vs</div>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-secondary">Team B tactic</span>
+        <span className="pb-2.5 text-sm text-text-muted">v</span>
+        <label className="block min-w-0">
+          <span className="label">Side B</span>
           <select className="field" value={value.b} onChange={(e) => onChange({ ...value, b: e.target.value })}>{TACTICS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
         </label>
       </div>
-    </GlassCard>
+      <p className="mt-3 text-sm text-text-muted">
+        {TACTICS.find((t) => t.id === value.a)?.blurb}. Against: {TACTICS.find((t) => t.id === value.b)?.blurb.toLowerCase()}.
+      </p>
+    </Panel>
   );
 }
 
-function Slider({ label, min, max, step = 1, value, onChange }: { label: string; min: number; max: number; step?: number; value: number; onChange: (v: number) => void }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-secondary">{label}</span>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full" />
-    </label>
-  );
-}
-
-function MatchupCard({ n, m, winner, accent }: { n: number; m: MatchupSummary; winner: boolean; accent: string }) {
-  const rows: Array<{ label: string; a: number; b: number; suffix?: string }> = [
-    { label: "Average goals", a: m.avg_goals_a, b: m.avg_goals_b },
-    { label: "Possession", a: m.avg_possession_a, b: 100 - m.avg_possession_a, suffix: "%" },
-    { label: "Territory", a: m.avg_territorial_control_a, b: 100 - m.avg_territorial_control_a, suffix: "%" },
+function MatchupCard({ n, m, winner }: { n: number; m: MatchupSummary; winner: boolean }) {
+  const shares: Array<{ label: string; a: number }> = [
+    { label: "Possession", a: m.avg_possession_a },
+    { label: "Territory", a: m.avg_territorial_control_a },
   ];
   return (
-    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: n * 0.08 }} className={cn("glass relative overflow-hidden p-5", winner && "ring-2 ring-warning/60")}>
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
-      {winner && <span className="absolute right-4 top-4 chip border-warning/40 bg-warning/15 text-warning"><Trophy className="h-3.5 w-3.5" /> Better</span>}
-      <div className="eyebrow mb-1">Match-up {n} · {m.runs} runs</div>
-      <h3 className="mb-4 text-lg font-bold text-white">{label(m.tactic_a)} <span className="text-text-muted">vs</span> {label(m.tactic_b)}</h3>
-      <div className="space-y-4">
-        {rows.map((r) => {
-          const total = r.a + r.b || 1;
-          return (
-            <div key={r.label}>
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-text-secondary">{r.label}</span>
-                <span className="tabular-nums text-white"><AnimatedNumber value={r.a} decimals={r.suffix ? 1 : 2} suffix={r.suffix} /> <span className="text-text-muted">·</span> <AnimatedNumber value={r.b} decimals={r.suffix ? 1 : 2} suffix={r.suffix} /></span>
-              </div>
-              <div className="flex h-2.5 overflow-hidden rounded-full bg-white/5">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${(r.a / total) * 100}%` }} transition={{ duration: 0.8 }} style={{ background: "#00d9ff" }} />
-                <motion.div initial={{ width: 0 }} animate={{ width: `${(r.b / total) * 100}%` }} transition={{ duration: 0.8 }} style={{ background: "#ff5a6e" }} />
-              </div>
-            </div>
-          );
-        })}
+    <article className={cn("tile relative p-5", winner && "border-section/60")}>
+      {winner && <span className="chip absolute right-4 top-4 border-section/60 text-section"><Trophy className="h-3 w-3" /> Comes out ahead</span>}
+      <div className="text-sm text-text-muted">Match-up {n}, {m.runs} runs</div>
+      <h3 className="mt-0.5 pr-36 text-xl text-text-primary">{label(m.tactic_a)} <span className="text-text-muted">v</span> {label(m.tactic_b)}</h3>
+
+      <div className="mt-5 flex items-end gap-4">
+        <div>
+          <div className="text-xs text-text-muted">Average goals</div>
+          <div className="font-display text-5xl font-semibold leading-none text-text-primary">
+            <span className="text-team-a"><AnimatedNumber value={m.avg_goals_a} decimals={2} /></span>
+            <span className="mx-2 text-text-muted">–</span>
+            <span className="text-team-b"><AnimatedNumber value={m.avg_goals_b} decimals={2} /></span>
+          </div>
+        </div>
       </div>
-    </motion.div>
+
+      <div className="mt-6 space-y-4">
+        {shares.map((r) => (
+          <div key={r.label}>
+            <div className="mb-1.5 flex items-center justify-between text-sm">
+              <span className="text-text-secondary">{r.label}</span>
+              <span className="tabular text-text-muted">
+                <span className="text-team-a">{r.a.toFixed(1)}%</span><span className="mx-1.5">to</span><span className="text-team-b">{(100 - r.a).toFixed(1)}%</span>
+              </span>
+            </div>
+            <div className="relative h-2 overflow-hidden rounded-sm bg-team-b">
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: r.a / 100 }}
+                transition={{ duration: 0.5, ease: EASE_OUT }}
+                className="absolute inset-0 origin-left bg-team-a"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex gap-4 text-xs text-text-muted">
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-team-a" />{label(m.tactic_a)}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-team-b" />{label(m.tactic_b)}</span>
+      </div>
+    </article>
   );
 }

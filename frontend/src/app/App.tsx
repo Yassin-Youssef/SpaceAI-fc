@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
-import { Menu } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
-import { AppSidebar } from "./components/AppSidebar";
-import { Home, FEATURES } from "./components/Home";
+import { TopNav } from "./components/TopNav";
+import { Home } from "./components/Home";
 import { About } from "./components/About";
 import { FeaturePageInput } from "./components/FeaturePageInput";
 import { FeaturePageResults } from "./components/FeaturePageResults";
@@ -18,12 +17,13 @@ import { Auth } from "./components/Auth";
 import { analyzeFeature, healthCheck, type ResolvedInput } from "../lib/api";
 import { onAuthStateChange, signOut, getAnalyses, getCurrentUser } from "../lib/supabase";
 import { pageVariants } from "../lib/motion";
+import { FEATURES, FEATURE_BY_ID, sectionOf } from "../lib/features";
 import type { UserProfile, FeatureApiResponse, AnalysisFormData, SavedAnalysis, HealthResponse } from "../lib/types";
 
 /** Features that use the shared input → results flow. */
 const POSITION_FEATURES = new Set(["full-match", "pass-network", "space-control", "formation", "press-resistance", "patterns", "strategy", "explanation"]);
 
-const featureMeta = Object.fromEntries(FEATURES.map((f) => [f.id, f]));
+const featureMeta = FEATURE_BY_ID;
 
 const GUEST_USER: UserProfile = { id: "guest", email: "", full_name: "Guest", isGuest: true };
 
@@ -36,6 +36,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState("home");
   const [showResults, setShowResults] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  // Fixture picked on Home, run as soon as Full Match Analysis opens
+  const [autoDemo, setAutoDemo] = useState<string | null>(null);
 
   // ── Analysis state (per feature) ─────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
@@ -176,15 +178,15 @@ export default function App() {
   // ── Auth gate ────────────────────────────────────────────────
   if (!authReady) {
     return (
-      <div className="flex h-full items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand/30 border-t-brand" aria-label="Loading" />
+      <div className="flex h-full items-center justify-center bg-background" aria-busy="true" aria-label="Loading">
+        <span className="font-display text-2xl text-text-muted">SPACEAI FC</span>
       </div>
     );
   }
   if (!user) {
     return (
       <MotionConfig reducedMotion={reduceMotion ? "always" : "user"}>
-        <Toaster position="top-right" richColors closeButton />
+        <Toaster position="top-right" duration={4000} closeButton offset={{ top: 72, right: 16 }} />
         <Auth onLogin={handleLogin} onGuest={() => handleLogin(GUEST_USER)} />
       </MotionConfig>
     );
@@ -196,39 +198,29 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion={reduceMotion ? "always" : "user"}>
-      <Toaster position="top-right" richColors closeButton />
-      <div className="relative flex h-full w-full overflow-hidden bg-background">
-        {/* Ambient background */}
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at top, rgba(0,217,255,0.08) 0%, transparent 55%), radial-gradient(ellipse at bottom right, rgba(123,97,255,0.07) 0%, transparent 50%)" }} />
-          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, #00d9ff 1px, transparent 1px), radial-gradient(circle at 60% 70%, #00d9ff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #00d9ff 1px, transparent 1px)", backgroundSize: "100px 100px, 120px 120px, 90px 90px" }} />
-        </div>
-
-        <AppSidebar
+      <Toaster position="top-right" duration={4000} closeButton offset={{ top: 72, right: 16 }} />
+      <div className="flex h-full w-full flex-col overflow-hidden bg-background" data-section={sectionOf(currentView)}>
+        <TopNav
           activeItem={currentView}
           onNavigate={navigate}
           user={user}
           health={health}
           healthError={healthError}
           mobileOpen={mobileNav}
+          onMobileOpen={() => setMobileNav(true)}
           onMobileClose={() => setMobileNav(false)}
         />
 
-        <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-          {/* Mobile top bar */}
-          <div className="flex items-center gap-3 border-b border-white/10 bg-surface-1/80 px-4 py-3 backdrop-blur-xl lg:hidden">
-            <button type="button" onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-white hover:bg-white/5" aria-label="Open menu">
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="font-bold text-white">Space<span className="text-brand">AI</span> FC</div>
-            <div className="ml-auto truncate text-xs text-text-muted">{feature?.name ?? (currentView === "home" ? "Dashboard" : currentView)}</div>
-          </div>
-
           <div className="relative min-h-0 flex-1">
+            <AnimatePresence>
+              {isLoading && (
+                <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="busy-bar pointer-events-none !top-0 !bottom-auto z-20 text-section-fill" aria-hidden />
+              )}
+            </AnimatePresence>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={viewKey} variants={pageVariants} initial="initial" animate="animate" exit="exit" className="absolute inset-0">
                 {currentView === "home" && (
-                  <Home user={user} recentAnalyses={savedAnalyses.slice(0, 3)} onFeatureClick={navigate} onNavigate={navigate} />
+                  <Home user={user} recentAnalyses={savedAnalyses.slice(0, 3)} onFeatureClick={navigate} onNavigate={navigate} onRunMatch={(id) => { setAutoDemo(id); navigate("full-match"); }} />
                 )}
                 {currentView === "about" && <About onFeatureClick={navigate} />}
                 {currentView === "ask-ai" && <AskSpaceAI health={health} context={lastContext} />}
@@ -252,6 +244,8 @@ export default function App() {
                     onAnalyze={(data) => runAnalysis(currentView, data)}
                     isLoading={isLoading}
                     initial={formCache[currentView] ?? null}
+                    autoDemoId={currentView === "full-match" ? autoDemo : null}
+                    onAutoDemoUsed={() => setAutoDemo(null)}
                   />
                 )}
 
@@ -278,7 +272,6 @@ export default function App() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
       </div>
     </MotionConfig>
   );

@@ -1,6 +1,5 @@
-import { motion } from "motion/react";
 import {
-  ArrowLeft, Download, FileText, Save, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Film, Sparkles,
+  ArrowLeft, Download, FileText, Save, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Film,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -12,7 +11,8 @@ import type {
   SpaceControlResponse, PassNetworkResponse, PressResistanceResponse, PatternsResponse, RolesResponse,
   IntelligenceResponse, ExplanationResponse,
 } from "../../lib/types";
-import { Page, Button, ResultsSkeleton, EmptyState, StatTile } from "./common/Primitives";
+import { Page, Button, ResultsSkeleton, EmptyState, StatTile, ResultsHeader, LoadSwap, Band, type SkeletonVariant } from "./common/Primitives";
+import { FEATURE_BY_ID, SECTION_LABEL } from "../../lib/features";
 import {
   VizGrid, FormationSection, SpaceControlSection, PassNetworkSection, PressResistanceSection,
   PatternsSection, RolesSection, IntelligenceSection, ExplanationSection, type TeamMeta,
@@ -40,11 +40,10 @@ interface FeaturePageResultsProps {
 export function FeaturePageResults({
   featureId,
   featureName,
-  icon: Icon,
   teamAName = "Team A",
   teamBName = "Team B",
-  teamAColor = "#00d9ff",
-  teamBColor = "#ff5a6e",
+  teamAColor = "#0d0d0d",
+  teamBColor = "#e1061f",
   results,
   resolved,
   error,
@@ -130,100 +129,110 @@ export function FeaturePageResults({
   };
 
   // ── Render ──────────────────────────────────────────────────
+  const showOpponent = needsOpponent(featureId, results);
   return (
     <Page>
-      <div className="space-y-5">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={onBack} className="rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary transition-colors hover:bg-white/10 hover:text-white" aria-label="Back to inputs">
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_24px_rgba(0,217,255,0.35)]">
-              <Icon className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <div className="eyebrow">{featureName}</div>
-              <h2 className="text-xl font-bold text-white sm:text-2xl">
-                {teamAName}{needsOpponent(featureId, results) ? <span className="text-text-muted"> vs </span> : ""}{needsOpponent(featureId, results) ? teamBName : ""}
-              </h2>
-            </div>
-          </div>
-          <StatusChip loading={isLoading} error={error} />
-        </motion.div>
+      <ResultsHeader
+        context={SECTION_LABEL[FEATURE_BY_ID[featureId]?.section ?? "analysis"]}
+        title={featureName}
+        onBack={onBack}
+        right={<StatusChip loading={isLoading} error={error} />}
+      />
 
+      {/* Broadcast band: who is playing, and for Full Match the headline numbers */}
+      <Band className="mt-6 py-7">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <TeamName name={teamAName} color={teamAColor} />
+          {showOpponent && <>
+            <span className="font-num text-3xl text-text-muted">v</span>
+            <TeamName name={teamBName} color={teamBColor} />
+          </>}
+        </div>
         {inputData?.demoMatch && (
-          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="glass flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm">
-            <span className="font-semibold text-white">{inputData.demoMatch.title}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            <span className="font-semibold text-text-primary">{inputData.demoMatch.title}</span>
             <span className="text-text-muted">{inputData.demoMatch.subtitle}</span>
             {(inputData.demoMatch.formationA || inputData.demoMatch.formationB) && (
-              <span className="chip border-white/10 bg-white/5 text-text-secondary" title="Formations named in the official line-ups. The engine detects the average shape, which often differs.">
-                Line-ups {inputData.demoMatch.formationA || "?"} v {inputData.demoMatch.formationB || "?"}
+              <span className="chip border-line-strong text-text-secondary" title="Formations named in the official line-ups. The engine detects the average shape, which often differs.">
+                Named line-ups {inputData.demoMatch.formationA || "?"} v {inputData.demoMatch.formationB || "?"}
               </span>
             )}
-            <span className={`chip ml-auto ${inputData.demoMatch.sourceKind === "statsbomb" ? "border-success/40 bg-success/10 text-success" : inputData.demoMatch.sourceKind === "sample" ? "border-white/10 bg-white/5 text-text-secondary" : "border-warning/40 bg-warning/10 text-warning"}`} title={inputData.demoMatch.note}>
-              {inputData.demoMatch.sourceKind === "statsbomb" ? "StatsBomb open data" : inputData.demoMatch.sourceKind === "sample" ? "Sample data" : "Reconstructed line-ups"}
+            <span
+              className={`chip ${inputData.demoMatch.sourceKind === "statsbomb" ? "border-success/60 text-success" : inputData.demoMatch.sourceKind === "sample" ? "border-line-strong text-text-secondary" : "border-warning/60 text-warning"}`}
+              title={inputData.demoMatch.note}
+            >
+              {inputData.demoMatch.sourceKind === "statsbomb" ? "StatsBomb open data" : inputData.demoMatch.sourceKind === "sample" ? "Built-in sample" : "Reconstructed line-ups"}
             </span>
-          </motion.div>
+          </div>
         )}
+        {featureId === "full-match" && results && !isLoading && !error && <HeadlineNumbers results={results} meta={meta} />}
+      </Band>
 
-        {isLoading && <ResultsSkeleton message={`Running ${featureName.toLowerCase()} on the tactical engine…`} />}
-
-        {!isLoading && error && (
-          <EmptyState
-            icon={XCircle}
-            title="Analysis failed"
-            description={error}
-            action={
-              <div className="flex flex-wrap justify-center gap-2">
-                {onRetry && <Button icon={RefreshCw} onClick={onRetry}>Try again</Button>}
-                <Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Edit inputs</Button>
-              </div>
-            }
-          />
-        )}
-
-        {!isLoading && !error && !results && (
-          <EmptyState icon={Sparkles} title="No results yet" description="Run an analysis to see visualisations and insights here." action={<Button icon={ArrowLeft} onClick={onBack}>Go to inputs</Button>} />
-        )}
-
-        {!isLoading && !error && results && (
-          <>
-            {isVideo && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${isSynthetic ? "border-warning/40 bg-warning/10 text-warning" : "border-brand/40 bg-brand/10 text-brand"}`}>
-                {isSynthetic ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> : <Film className="mt-0.5 h-4 w-4 shrink-0" />}
-                <div>
-                  <div className="font-semibold">{isSynthetic ? "Synthetic tracking snapshot" : "Positions extracted from video"}</div>
-                  <div className="text-xs opacity-90">{resolved?.note ?? "Player positions were derived from the video pipeline."}</div>
+      <div className="mt-6">
+        <LoadSwap loading={isLoading} skeleton={<ResultsSkeleton variant={SKELETON[featureId] ?? "overview"} message={`Running ${featureName.toLowerCase()}…`} />}>
+          {error ? (
+            <EmptyState
+              icon={XCircle}
+              title="The analysis did not finish"
+              description={error}
+              action={
+                <div className="flex flex-wrap gap-2">
+                  {onRetry && <Button icon={RefreshCw} onClick={onRetry}>Try again</Button>}
+                  <Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Edit inputs</Button>
                 </div>
-              </motion.div>
-            )}
-
-            <FeatureBody featureId={featureId} results={results} meta={meta} visualizations={visualizations} />
-
-            {/* Action bar */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass flex flex-wrap items-center gap-2 p-3">
-              <Button variant="secondary" icon={Download} onClick={handleDownloadAll} disabled={!visualizations.length}>
-                PNG{visualizations.length > 1 ? ` (${visualizations.length})` : ""}
-              </Button>
-              <Button variant="secondary" icon={FileText} loading={exporting === "docx"} onClick={() => handleExport("docx")}>Word report</Button>
-              <Button variant="secondary" icon={FileText} loading={exporting === "pdf"} onClick={() => handleExport("pdf")}>PDF summary</Button>
-              <div className="flex-1" />
-              {onRetry && <Button variant="ghost" icon={RefreshCw} onClick={onRetry}>Re-run</Button>}
-              {canSave ? (
-                <Button icon={saved ? CheckCircle2 : Save} loading={isSaving} disabled={saved} onClick={handleSave}>
-                  {saved ? "Saved" : "Save to history"}
-                </Button>
-              ) : (
-                <span className="text-xs text-text-muted">Sign in with Supabase configured to save history</span>
+              }
+            />
+          ) : !results ? (
+            <EmptyState icon={FileText} title="No results yet" description="Go back to the inputs, load a demo fixture or enter positions, and run the analysis." action={<Button icon={ArrowLeft} onClick={onBack}>Go to inputs</Button>} />
+          ) : (
+            <div className="space-y-5">
+              {isVideo && (
+                <div className={`flex items-start gap-3 rounded-md border p-4 text-sm ${isSynthetic ? "border-warning/50 bg-warning/5" : "border-line-strong bg-surface-1"}`}>
+                  {isSynthetic ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /> : <Film className="mt-0.5 h-4 w-4 shrink-0 text-section" />}
+                  <div>
+                    <div className={`font-medium ${isSynthetic ? "text-warning" : "text-text-primary"}`}>{isSynthetic ? "Synthetic tracking snapshot" : "Positions extracted from video"}</div>
+                    <div className="text-text-secondary">{resolved?.note ?? "Player positions were derived from the video pipeline."}</div>
+                  </div>
+                </div>
               )}
-            </motion.div>
-          </>
-        )}
+
+              <FeatureBody featureId={featureId} results={results} meta={meta} visualizations={visualizations} />
+
+              {/* Action bar */}
+              <div className="flex flex-wrap items-center gap-2 border-t border-line pt-5">
+                <Button variant="secondary" icon={Download} onClick={handleDownloadAll} disabled={!visualizations.length}>
+                  {visualizations.length > 1 ? `Images (${visualizations.length})` : "Image"}
+                </Button>
+                <Button variant="secondary" icon={FileText} loading={exporting === "docx"} onClick={() => handleExport("docx")}>Word report</Button>
+                <Button variant="secondary" icon={FileText} loading={exporting === "pdf"} onClick={() => handleExport("pdf")}>PDF summary</Button>
+                <div className="hidden flex-1 sm:block" />
+                {onRetry && <Button variant="ghost" icon={RefreshCw} onClick={onRetry}>Run again</Button>}
+                {canSave ? (
+                  <Button icon={saved ? CheckCircle2 : Save} loading={isSaving} disabled={saved} onClick={handleSave}>
+                    {saved ? "Saved" : "Save to history"}
+                  </Button>
+                ) : (
+                  <span className="text-sm text-text-muted">Sign in to save analyses to your history</span>
+                )}
+              </div>
+            </div>
+          )}
+        </LoadSwap>
       </div>
     </Page>
   );
 }
+
+const SKELETON: Record<string, SkeletonVariant> = {
+  "full-match": "overview",
+  "pass-network": "network",
+  "space-control": "space",
+  formation: "formation",
+  "press-resistance": "press",
+  patterns: "patterns",
+  strategy: "strategy",
+  explanation: "report",
+};
 
 // ── Feature bodies ──────────────────────────────────────────────
 
@@ -235,12 +244,6 @@ function FeatureBody({ featureId, results, meta, visualizations }: { featureId: 
       const fm = d.formation, sc = d.space_control, pr = d.press_resistance, pn = d.pass_network;
       return (
         <div className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label={meta.teamAName} value={fm?.team_a_formation ?? "–"} tone="teamA" hint="Formation" />
-            <StatTile label={meta.teamBName} value={fm?.team_b_formation ?? "–"} tone="teamB" hint="Formation" />
-            <StatTile label="Territory" value={sc?.team_a_control ?? 0} suffix="%" decimals={1} tone="brand" hint={`${meta.teamAName} control`} />
-            <StatTile label="Press resistance" value={pr?.press_resistance_score ?? 0} tone="success" hint={`${pn?.total_passes ?? 0} passes analysed`} />
-          </div>
           <VizGrid visualizations={visualizations} title="All visualisations" />
           {fm && <FormationSection data={fm} meta={meta} />}
           {sc && <SpaceControlSection data={sc} meta={meta} />}
@@ -316,10 +319,32 @@ function FeatureBody({ featureId, results, meta, visualizations }: { featureId: 
 
 // ── Helpers ─────────────────────────────────────────────────────
 
+function TeamName({ name, color }: { name: string; color: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-3">
+      <span className="h-8 w-2 shrink-0 sm:h-10" style={{ background: color === "#0d0d0d" ? "#ffffff" : color }} />
+      <span className="font-display truncate text-3xl uppercase text-text-primary sm:text-5xl">{name}</span>
+    </span>
+  );
+}
+
+function HeadlineNumbers({ results, meta }: { results: FeatureApiResponse; meta: TeamMeta }) {
+  const d = results as unknown as FullAnalysisResponse;
+  const fm = d.formation, sc = d.space_control, pr = d.press_resistance, pn = d.pass_network;
+  return (
+    <div className="mt-6 grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
+      <StatTile className="border-0" label={`${meta.teamAName} shape`} value={fm?.team_a_formation ?? "–"} tone="neutral" />
+      <StatTile className="border-0" label={`${meta.teamBName} shape`} value={fm?.team_b_formation ?? "–"} tone="neutral" />
+      <StatTile className="border-0" label={`${meta.teamAName} territory`} value={sc?.team_a_control ?? 0} suffix="%" decimals={1} tone="section" />
+      <StatTile className="border-0" label="Press resistance" value={pr?.press_resistance_score ?? 0} tone="section" hint={`${pn?.total_passes ?? 0} passes analysed`} />
+    </div>
+  );
+}
+
 function StatusChip({ loading, error }: { loading: boolean; error?: string | null }) {
-  if (loading) return <span className="chip border-brand/40 bg-brand/10 text-brand"><span className="h-2 w-2 animate-pulse rounded-full bg-brand" /> Analysing</span>;
-  if (error) return <span className="chip border-danger/40 bg-danger/10 text-danger"><XCircle className="h-3.5 w-3.5" /> Failed</span>;
-  return <span className="chip border-success/40 bg-success/10 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Complete</span>;
+  if (loading) return <span className="chip border-section/50 text-section">Analysing</span>;
+  if (error) return <span className="chip border-danger/50 text-danger"><XCircle className="h-3.5 w-3.5" /> Failed</span>;
+  return <span className="chip border-success/50 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Complete</span>;
 }
 
 function needsOpponent(featureId: string, results: FeatureApiResponse | null): boolean {

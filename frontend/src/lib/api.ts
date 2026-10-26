@@ -190,7 +190,7 @@ export const FEATURE_ENDPOINTS: Record<string, string> = {
 
 /** Which features need an opponent (team B). */
 export const FEATURES_NEEDING_TEAM_B = new Set([
-  "full-match", "space-control", "press-resistance", "patterns", "strategy", "explanation",
+  "full-match", "space-control", "formation", "press-resistance", "patterns", "strategy", "explanation",
 ]);
 
 /** Which features use pass events. */
@@ -282,8 +282,8 @@ function buildRequestBody(
     input_type: "manual",
     team_a_name: formData.teamAName?.trim() || "Team A",
     team_b_name: formData.teamBName?.trim() || "Team B",
-    team_a_color: formData.teamAColor || "#00d9ff",
-    team_b_color: formData.teamBColor || "#ff5a6e",
+    team_a_color: formData.teamAColor || "#0d0d0d",
+    team_b_color: formData.teamBColor || "#e1061f",
     team_a: resolved.teamA,
     team_b: resolved.teamB,
     passes: resolved.passes,

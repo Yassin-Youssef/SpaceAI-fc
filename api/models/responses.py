@@ -267,6 +267,10 @@ class SimulationCompareResponse(BaseModel):
     matchup_1: Dict[str, Any]
     matchup_2: Dict[str, Any]
     verdict: str
+    # Plain-language reading of the numbers: LLM-written when a key is set,
+    # otherwise a deterministic summary. insights_mode says which.
+    insights: Optional[str] = None
+    insights_mode: Optional[str] = None
     error: Optional[str] = None
 
 

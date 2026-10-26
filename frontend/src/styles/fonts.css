@@ -1,16 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400&display=swap');
 
-/* UCL Broadcast Style Typography */
-:root {
-  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Rajdhani', system-ui, -apple-system, sans-serif;
-}
-
+/*
+ * One family, three widths, like a football media brand:
+ *   expanded black  → poster headlines   (h1, .font-display)
+ *   condensed heavy → scoreboard numbers (.font-num)
+ *   normal width    → interface text     (body)
+ * Newsreader carries long reading: reports, answers, scouting notes.
+ */
 body {
-  font-family: var(--font-primary);
+  font-family: var(--font-sans);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+h1, h2, .font-display {
+  font-family: var(--font-sans);
+  font-stretch: 118%;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+h1 {
+  text-transform: uppercase;
+  font-weight: 900;
   letter-spacing: -0.02em;
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-stretch: 100%;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.font-num {
+  font-family: var(--font-sans);
+  font-stretch: 72%;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.font-serif, .prose-serif {
+  font-family: var(--font-serif);
+  font-stretch: 100%;
+  letter-spacing: 0;
 }

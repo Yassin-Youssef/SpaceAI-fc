@@ -11,6 +11,8 @@ py -3 -m venv .venv            # or: python -m venv .venv
 # source .venv/bin/activate && pip install -r requirements.txt   # macOS / Linux
 ```
 
+On this machine Node lives in `C:\Program Files\nodejs` and is not on Git Bash's PATH: prefix commands with `export PATH="/c/Program Files/nodejs:$PATH"`. The `.venv` is Python 3.14.
+
 **Run the full end-to-end demo** (generates all outputs in `outputs/`):
 ```bash
 python main.py
@@ -178,12 +180,13 @@ Primary production UI — React 18 + TypeScript + Vite + Tailwind CSS v4 + shadc
 
 - **`frontend/src/main.tsx`** — Entry point, mounts `App.tsx`.
 - **`frontend/src/app/App.tsx`** — State-machine router: a single `currentView` string (useState) drives which page component renders, wrapped in a motion `AnimatePresence` for page transitions. React Router is installed but navigation is handled via state, not URL routing. Position-based features (`full-match`, `pass-network`, `space-control`, `formation`, `press-resistance`, `patterns`, `strategy`, `explanation`) share the `FeaturePageInput` → `FeaturePageResults` flow; the others have their own pages.
-- **`frontend/src/app/components/`** — Page-level components: `Home` (also exports the `FEATURES` catalogue), `About`, `Auth` (guest mode + Supabase + Google OAuth), `AskSpaceAI`, `Compare`, `FeaturePageInput/Results`, `History`, `PlayerAssessment`, `AppSidebar`, `Settings`, `Simulation`.
-- **`frontend/src/app/components/common/`** — Shared building blocks: `Primitives.tsx` (Page, PageHeader, GlassCard, Button, StatTile, Collapsible, EmptyState, ResultsSkeleton), `AnimatedNumber`, `PitchPreview` (SVG pitch), `Markdown` (safe renderer for LLM text).
+- **`frontend/src/app/components/`** — Page-level components: `Home` (fixture cards run Full Match Analysis via `autoDemoId`), `About`, `Auth` (guest mode + Supabase + Google OAuth), `AskSpaceAI`, `Compare`, `FeaturePageInput/Results`, `History`, `PlayerAssessment`, `TopNav`, `Settings`, `Simulation`.
+- **`frontend/src/app/components/common/`** — Shared building blocks: `Primitives.tsx` (Page, PageHeader, ResultsHeader, Band, Panel, Button, StatTile, Collapsible, EmptyState, LoadSwap, ResultsSkeleton), `AnimatedNumber`, `PitchPreview` (SVG pitch), `Markdown` (safe renderer for LLM text).
 - **`frontend/src/app/components/results/Sections.tsx`** — Feature-specific result renderers (formation cards, zone bars, pass stats, press gauge, pattern cards, SWOT, recommendations, report text).
 - **`frontend/src/app/components/ui/`** — shadcn/ui primitives (accordion, dialog, button, etc.).
 - **`frontend/src/lib/api.ts`** — All backend calls. `analyzeFeature(featureId, formData)` resolves the input (manual / uploads video / uploads dataset) via `resolveFormInput()` and maps feature IDs to endpoints (`FEATURE_ENDPOINTS`). Pass text (`4->8->1`) is parsed with coordinates filled in from player positions.
 - **`frontend/src/lib/demo.ts`** — El Clásico demo data used by every "Try Demo" button.
+- **Design system** (`frontend/src/styles/theme.css`, `fonts.css`): a football-media look, light pages with black ink. Fonts: Archivo (variable width: `h1`/`.font-display` expanded black, `h1` uppercase; `.font-num` condensed heavy for scoreboard numbers; normal width for UI) and Newsreader (`.font-serif`) for long reading (reports, chat answers, scouting notes). Each area has a colour in two forms: `--section` (readable text) and `--section-fill` + `--section-on` (bright fill and its text): analysis/core = green, intelligence = blue, advanced = yellow. It is set by `data-section` on the app shell (`sectionOf()`), or per element with `sectionVar()` from `lib/features.ts`. The `.band` class (and `Band` component, full-bleed) inverts tokens for black broadcast blocks; inside it state colours switch to their bright fills. `.tag` is the solid area label. Teams default to black (A) and red (B); demo fixture JSON still stores old colours, which the frontend ignores. Pitches use `--grass`/`--grass-stripe`. Type scale ratio 1.2. Navigation is `TopNav.tsx` (black top bar + per-area feature strip; full-screen menu on phones), not a sidebar. `lib/features.ts` is the single feature catalogue.
 - **`frontend/src/lib/motion.ts`** — Shared animation presets. The project uses the `motion` package (`motion/react`), which is framer-motion under its current name.
 - **`frontend/src/lib/llm.ts`** — Optional direct browser→OpenRouter calls (requires `VITE_OPENROUTER_API_KEY`). Returns `null` when unconfigured; callers fall back to the backend `/api/ask` endpoint.
 - **`frontend/src/lib/supabase.ts`** — Auth (signUp/signIn/signOut) and analyses CRUD. Degrades gracefully when env vars are absent.

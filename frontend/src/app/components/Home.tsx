@@ -1,160 +1,250 @@
 import { motion } from "motion/react";
-import {
-  BarChart3, Share2, Map, Shield, Zap, Grid3x3, Lightbulb, User, MessageSquare, GitCompare, Gamepad2,
-  FileText, ArrowRight, Clock, Info, Sparkles, type LucideIcon,
-} from "lucide-react";
-import type { UserProfile, SavedAnalysis } from "../../lib/types";
-import { Page, StaggerGrid, StaggerItem, Button, EmptyState } from "./common/Primitives";
-import { cardHover } from "../../lib/motion";
-
-interface Feature {
-  id: string;
-  icon: LucideIcon;
-  name: string;
-  description: string;
-  group: "Analysis" | "Intelligence" | "Advanced";
-}
-
-export const FEATURES: Feature[] = [
-  { id: "full-match", icon: BarChart3, name: "Full Match Analysis", description: "Every engine phase in one run: pitch, passes, space, formations, SWOT, recommendations and a written report.", group: "Analysis" },
-  { id: "pass-network", icon: Share2, name: "Pass Network", description: "Directed pass graph with centrality metrics, key distributor and weak links.", group: "Analysis" },
-  { id: "space-control", icon: Map, name: "Space Control", description: "Voronoi and influence maps showing who owns each zone of the pitch.", group: "Analysis" },
-  { id: "formation", icon: Shield, name: "Formation Detection", description: "Clustering on player depth to read the shape of both teams, with confidence.", group: "Analysis" },
-  { id: "press-resistance", icon: Zap, name: "Press Resistance", description: "How well a side plays through pressure, scored 0–100 with vulnerable zones.", group: "Analysis" },
-  { id: "patterns", icon: Grid3x3, name: "Tactical Patterns", description: "Overlaps, compact blocks, wide overloads, high lines and low blocks.", group: "Analysis" },
-  { id: "strategy", icon: Lightbulb, name: "Strategy Recommendations", description: "Prioritised adjustments reasoned from SWOT and the knowledge graph.", group: "Intelligence" },
-  { id: "ask-ai", icon: MessageSquare, name: "Ask SpaceAI", description: "Conversational tactical Q&A grounded in your latest analysis.", group: "Intelligence" },
-  { id: "explanation", icon: FileText, name: "Tactical Explanation", description: "A natural-language match report from the template engine or an LLM.", group: "Intelligence" },
-  { id: "player-assessment", icon: User, name: "Player Assessment", description: "Attribute radar, best role and scouting report from video, stats or ratings.", group: "Advanced" },
-  { id: "compare", icon: GitCompare, name: "Compare", description: "Run two tactical match-ups side by side and see which setup wins.", group: "Advanced" },
-  { id: "simulation", icon: Gamepad2, name: "Simulation", description: "Multi-agent 5v5 / 7v7 simulation with an animated replay.", group: "Advanced" },
-];
+import { ArrowRight, Github, Clock, Database, PenLine, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import type { UserProfile, SavedAnalysis, DemoMatchSummary } from "../../lib/types";
+import { FEATURES, SECTION_LABEL, sectionVar, type Feature } from "../../lib/features";
+import { GITHUB_URL, PHASES, STACK } from "../../lib/project";
+import { DEMO_TEAM_A, DEMO_TEAM_B, DEMO_PASSES, DEMO_TEAM_A_NAME, DEMO_TEAM_B_NAME, DEMO_TEAM_A_COLOR, DEMO_TEAM_B_COLOR } from "../../lib/demo";
+import { toPlayerData, listDemoMatches } from "../../lib/api";
+import { Page, Button, Skeleton, Band } from "./common/Primitives";
+import { PitchPreview } from "./common/PitchPreview";
+import { PipelineFlow } from "./common/PipelineFlow";
+import { reveal, staggerContainer, staggerItem } from "../../lib/motion";
 
 interface HomeProps {
   user?: UserProfile | null;
   recentAnalyses?: SavedAnalysis[];
   onFeatureClick: (featureId: string) => void;
   onNavigate: (view: string) => void;
+  /** Run Full Match Analysis on a bundled fixture. */
+  onRunMatch: (matchId: string) => void;
 }
 
-export function Home({ user, recentAnalyses = [], onFeatureClick, onNavigate }: HomeProps) {
-  const hero = FEATURES[0];
-  const HeroIcon = hero.icon;
-  const groups: Feature["group"][] = ["Analysis", "Intelligence", "Advanced"];
-  const firstName = user?.full_name?.split(" ")[0] ?? "Manager";
+const AREA_ROLE: Record<Feature["section"], string> = {
+  analysis: "What the engine sees in positions and passes.",
+  intelligence: "What it concludes, and how it explains itself.",
+  advanced: "Scouting, simulation and what-if comparisons.",
+};
+
+export function Home({ recentAnalyses = [], onFeatureClick, onNavigate, onRunMatch }: HomeProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const teamA = useMemo(() => toPlayerData(DEMO_TEAM_A), []);
+  const teamB = useMemo(() => toPlayerData(DEMO_TEAM_B), []);
+  const [matches, setMatches] = useState<DemoMatchSummary[] | null>(null);
+
+  useEffect(() => {
+    let off = false;
+    listDemoMatches().then((m) => { if (!off) setMatches(m); }).catch(() => { if (!off) setMatches([]); });
+    return () => { off = true; };
+  }, []);
 
   return (
-    <Page>
-      <div className="space-y-8">
-        {/* Welcome */}
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="eyebrow mb-2">Tactical intelligence · Sense → Understand → Reason → Act → Explain</div>
-            <h1 className="text-3xl font-bold text-white sm:text-4xl">
-              Welcome back, <span className="text-brand">{firstName}</span>
-            </h1>
-            <p className="mt-1 text-text-secondary">Pick a feature, load a real match from the demo menu, and let the engine read the game.</p>
-          </div>
-          <Button variant="secondary" icon={Info} onClick={() => onNavigate("about")}>How it works</Button>
+    <Page scrollRef={scrollRef}>
+      {/* ── Hero ── */}
+      <section className="grid items-end gap-10 pb-12 pt-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-12 lg:pt-6">
+        <motion.div variants={staggerContainer(0.06)} initial="hidden" animate="show" className="min-w-0">
+          <motion.h1 variants={staggerItem} className="text-5xl text-text-primary sm:text-7xl xl:text-8xl">
+            Read the game from where the players stand.
+          </motion.h1>
+          <motion.p variants={staggerItem} className="mt-6 max-w-xl text-lg text-text-secondary">
+            Give SpaceAI FC eleven positions and the passes between them. It finds both formations, maps who
+            controls each zone, scores how well a side plays through pressure, and tells the coaching staff what
+            to change and why.
+          </motion.p>
+          <motion.div variants={staggerItem} className="mt-8 flex flex-wrap gap-3">
+            <Button size="lg" onClick={() => onFeatureClick("full-match")}>Start an analysis</Button>
+            <Button size="lg" variant="secondary" onClick={() => onNavigate("about")}>How it works</Button>
+          </motion.div>
         </motion.div>
 
-        {/* Hero */}
-        <motion.button
-          type="button"
-          initial={{ opacity: 0, y: 16 }}
+        <motion.figure
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.08 }}
-          whileHover={{ y: -3 }}
-          onClick={() => onFeatureClick(hero.id)}
-          className="glass-brand group relative block w-full overflow-hidden p-6 text-left sm:p-8"
+          transition={{ duration: 0.4, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
+          className="min-w-0"
         >
-          <div className="pitch-grid-bg pointer-events-none absolute inset-0 opacity-70" />
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand/20 blur-3xl"
-            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-5">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_40px_rgba(0,217,255,0.45)] transition-transform group-hover:scale-105 sm:h-20 sm:w-20">
-                <HeroIcon className="h-8 w-8 text-white sm:h-10 sm:w-10" />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand"><Sparkles className="h-3.5 w-3.5" /> Start here</div>
-                <h2 className="text-2xl font-bold text-white sm:text-3xl">{hero.name}</h2>
-                <p className="mt-1 max-w-xl text-sm text-text-secondary sm:text-base">{hero.description}</p>
-              </div>
-            </div>
-            <ArrowRight className="hidden h-8 w-8 shrink-0 text-brand transition-transform group-hover:translate-x-2 sm:block" />
-          </div>
-        </motion.button>
+          <PitchPreview teamA={teamA} teamB={teamB} teamAColor={DEMO_TEAM_A_COLOR} teamBColor={DEMO_TEAM_B_COLOR} passes={DEMO_PASSES} showNames={false} passDelay={0.45} />
+          <figcaption className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-text-secondary">
+            <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: DEMO_TEAM_A_COLOR }} />{DEMO_TEAM_A_NAME}, with its passes drawn</span>
+            <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: DEMO_TEAM_B_COLOR }} />{DEMO_TEAM_B_NAME}</span>
+          </figcaption>
+        </motion.figure>
+      </section>
 
-        {/* Feature groups */}
-        {groups.map((group, gi) => (
-          <section key={group}>
-            <div className="mb-3 flex items-center gap-3">
-              <h2 className="text-lg font-bold text-white">{group}</h2>
-              <span className="h-px flex-1 bg-white/10" />
-            </div>
-            <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" stagger={0.05}>
-              {FEATURES.filter((f) => f.group === group && f.id !== hero.id).map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <StaggerItem key={feature.id}>
-                    <motion.button
-                      type="button"
-                      {...cardHover}
-                      onClick={() => onFeatureClick(feature.id)}
-                      className="glass group relative h-full w-full p-5 text-left transition-colors hover:border-brand/40"
-                    >
-                      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-white/10 to-white/5 text-brand transition-all group-hover:from-brand/25 group-hover:to-brand/10">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <h3 className="mb-1 text-base font-bold text-white transition-colors group-hover:text-brand">{feature.name}</h3>
-                      <p className="text-sm leading-relaxed text-text-secondary">{feature.description}</p>
-                      <ArrowRight className="absolute right-4 top-5 h-4 w-4 text-text-muted opacity-0 transition-all group-hover:translate-x-1 group-hover:text-brand group-hover:opacity-100" />
-                    </motion.button>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerGrid>
-            {gi < groups.length - 1 && <div className="h-2" />}
-          </section>
-        ))}
-
-        {/* Recent analyses */}
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Recent analyses</h2>
-            {recentAnalyses.length > 0 && <button type="button" onClick={() => onNavigate("history")} className="text-sm font-semibold text-brand hover:underline">View all</button>}
+      {/* ── Pick a match: a broadcast band of real fixtures ── */}
+      <Band className="py-12">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-3xl uppercase text-text-primary sm:text-5xl">Pick a match</h2>
+            <p className="mt-2 text-text-secondary">Real fixtures, ready to analyse. One click runs every phase of the engine.</p>
           </div>
-          {recentAnalyses.length > 0 ? (
-            <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {recentAnalyses.slice(0, 3).map((a) => (
-                <StaggerItem key={a.id}>
-                  <button type="button" onClick={() => onNavigate("history")} className="glass group w-full p-4 text-left transition-colors hover:border-brand/40">
-                    <div className="mb-2 flex items-start justify-between">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/15 text-brand"><Clock className="h-4 w-4" /></div>
-                      <span className="text-xs text-text-muted">{formatDate(a.created_at)}</span>
-                    </div>
-                    <h3 className="truncate font-bold text-white transition-colors group-hover:text-brand">{a.match_name}</h3>
-                    <p className="text-xs text-text-secondary">{a.feature}</p>
-                  </button>
-                </StaggerItem>
-              ))}
-            </StaggerGrid>
-          ) : (
-            <EmptyState
-              compact
-              icon={Clock}
-              title="No analyses saved yet"
-              description={user?.isGuest ? "Sign in with a Supabase-backed account to keep a history of your analyses." : "Run any feature and press “Save to history” to see it here."}
-            />
-          )}
-        </section>
-      </div>
+        </div>
+        <div className="mt-8 grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">
+          {matches === null
+            ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-band p-5"><Skeleton className="h-24" /></div>)
+            : matches.length === 0
+            ? <p className="bg-band p-5 text-text-secondary">The engine is offline, so the fixture list is unavailable. Full Match Analysis still has a built-in sample.</p>
+            : matches.map((m) => <MatchCard key={m.id} m={m} onClick={() => onRunMatch(m.id)} />)}
+        </div>
+      </Band>
+
+      {recentAnalyses.length > 0 && (
+        <Reveal root={scrollRef} className="pt-12">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-2xl text-text-primary">Pick up where you left off</h2>
+            <button type="button" onClick={() => onNavigate("history")} className="text-sm font-semibold underline underline-offset-4 hover:text-section">All saved analyses</button>
+          </div>
+          <div className="grid gap-px border border-line bg-line sm:grid-cols-3">
+            {recentAnalyses.slice(0, 3).map((a) => (
+              <button key={a.id} type="button" onClick={() => onNavigate("history")} className="flex items-center gap-3 bg-surface-1 px-4 py-3 text-left transition-colors hover:bg-surface-2">
+                <Clock className="h-4 w-4 shrink-0 text-text-muted" />
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-text-primary">{a.match_name}</span>
+                  <span className="block truncate text-sm text-text-muted">{a.feature}, {formatDate(a.created_at)}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Reveal>
+      )}
+
+      {/* ── Feature index ── */}
+      <Reveal root={scrollRef} className="py-16">
+        <SectionHead title="Twelve tools, three areas" text="Each area keeps its colour throughout the app, so you always know what kind of answer you are reading." />
+        <div className="mt-10 grid gap-8 lg:grid-cols-3 lg:gap-6">
+          {(Object.keys(SECTION_LABEL) as Feature["section"][]).map((area) => (
+            <div key={area} style={sectionVar(area)}>
+              <div className="bg-section-fill px-4 py-3 text-section-on">
+                <div className="font-display text-2xl uppercase">{SECTION_LABEL[area]}</div>
+                <p className="text-sm font-medium opacity-80">{AREA_ROLE[area]}</p>
+              </div>
+              <ul className="border-x border-b border-line bg-surface-1">
+                {FEATURES.filter((f) => f.section === area).map((f) => (
+                  <li key={f.id} className="border-t border-line first:border-t-0">
+                    <FeatureRow icon={f.icon} name={f.name} description={f.description} onClick={() => onFeatureClick(f.id)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* ── Pipeline ── */}
+      <Reveal root={scrollRef} className="border-t-2 border-text-primary py-16">
+        <SectionHead title="One loop behind every feature" text="SpaceAI FC is modelled on a robot's cognitive pipeline. Each feature runs part of this loop; Full Match Analysis runs all of it." />
+        <div className="mt-10">
+          <PipelineFlow container={scrollRef} />
+        </div>
+      </Reveal>
+
+      {/* ── Engine phases ── */}
+      <Reveal root={scrollRef} className="grid gap-10 border-t-2 border-text-primary py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <SectionHead title="Four engine phases" text="Stateless Python modules. An orchestrator passes each phase's output to the next, and the API exposes every phase on its own." />
+        <ol className="divide-y divide-line border-y border-line">
+          {PHASES.map((p, i) => (
+            <li key={p.name} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-4 py-6">
+              <span className="font-num text-6xl leading-none text-text-primary">{i + 1}</span>
+              <div className="min-w-0">
+                <h3 className="text-xl text-text-primary">{p.name}</h3>
+                <p className="mt-1 text-text-secondary">{p.text}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {p.modules.map((m) => <code key={m} className="bg-surface-2 px-1.5 py-0.5 text-xs text-text-secondary">{m}.py</code>)}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Reveal>
+
+      {/* ── Stack ── */}
+      <Reveal root={scrollRef} className="grid gap-10 border-t-2 border-text-primary py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <SectionHead title="Built with" text="No API key needed: without one, answers come from the knowledge graph and templates." />
+        <dl className="divide-y divide-line border-y border-line">
+          {STACK.map((s) => (
+            <div key={s.group} className="grid gap-1 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+              <dt className="font-bold text-text-primary">{s.group}</dt>
+              <dd className="text-text-secondary">{s.items.join(", ")}</dd>
+            </div>
+          ))}
+        </dl>
+      </Reveal>
+
+      {/* ── Credit ── */}
+      <Band className="-mb-16 py-12">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="font-display text-3xl uppercase text-text-primary">Built by Yassin Youssef</div>
+          <p className="mt-1 text-text-secondary">Engine, API and interface, designed and written end to end.</p>
+        </div>
+        <a
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="press inline-flex h-12 items-center gap-2 self-start rounded-md bg-white px-5 font-bold text-band hover:bg-green-fill"
+        >
+          <Github className="h-4 w-4" /> Source on GitHub
+        </a>
+        </div>
+      </Band>
     </Page>
+  );
+}
+
+function MatchCard({ m, onClick }: { m: DemoMatchSummary; onClick: () => void }) {
+  const real = m.source_kind === "statsbomb";
+  return (
+    <button type="button" onClick={onClick} className="group flex flex-col gap-4 bg-band p-5 text-left transition-colors duration-150 hover:bg-surface-1">
+      <div className="flex items-center justify-between gap-3 text-sm text-text-muted">
+        <span className="truncate">{m.competition}</span>
+        <span className="shrink-0">{formatYear(m.date)}</span>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1">
+        <span className="font-display truncate text-2xl uppercase text-text-primary">{m.team_a}</span>
+        <span className="font-num text-4xl leading-none text-text-primary">{m.score.a}</span>
+        <span className="font-display truncate text-2xl uppercase text-text-primary">{m.team_b}</span>
+        <span className="font-num text-4xl leading-none text-text-primary">{m.score.b}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <span className={`chip ${real ? "border-success/60 text-success" : "border-warning/60 text-warning"}`}>
+          {real ? <Database className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+          {real ? "StatsBomb data" : "Reconstructed"}
+        </span>
+        <span className="flex items-center gap-1.5 text-sm font-bold text-green-fill">
+          Analyse <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function Reveal({ root, className, children }: { root: RefObject<HTMLElement | null>; className?: string; children: ReactNode }) {
+  return (
+    <motion.section variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true, root, amount: 0.15 }} className={className}>
+      {children}
+    </motion.section>
+  );
+}
+
+function SectionHead({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="max-w-2xl">
+      <h2 className="text-3xl uppercase text-text-primary sm:text-5xl">{title}</h2>
+      <p className="mt-3 text-text-secondary">{text}</p>
+    </div>
+  );
+}
+
+function FeatureRow({ icon: Icon, name, description, onClick }: { icon: LucideIcon; name: string; description: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="group flex w-full items-start gap-3 px-4 py-4 text-left transition-colors duration-150 hover:bg-surface-2">
+      <Icon className="mt-1 h-5 w-5 shrink-0 text-section" strokeWidth={2} />
+      <span className="min-w-0 flex-1">
+        <span className="font-display block text-lg text-text-primary">{name}</span>
+        <span className="mt-0.5 block text-sm text-text-secondary">{description}</span>
+      </span>
+      <ArrowRight className="mt-1.5 h-4 w-4 shrink-0 -translate-x-1 text-text-primary opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
+    </button>
   );
 }
 
@@ -164,4 +254,9 @@ function formatDate(iso: string): string {
   } catch {
     return iso.slice(0, 10);
   }
+}
+
+function formatYear(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }

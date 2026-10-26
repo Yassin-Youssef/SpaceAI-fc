@@ -10,8 +10,8 @@ import type { FormPlayer, PassEvent, MatchInfo } from "./types";
 
 export const DEMO_TEAM_A_NAME = "FC Barcelona";
 export const DEMO_TEAM_B_NAME = "Real Madrid";
-export const DEMO_TEAM_A_COLOR = "#00d9ff";
-export const DEMO_TEAM_B_COLOR = "#ff5a6e";
+export const DEMO_TEAM_A_COLOR = "#0d0d0d";
+export const DEMO_TEAM_B_COLOR = "#e1061f";
 
 export const DEMO_TEAM_A: FormPlayer[] = [
   { name: "ter Stegen",  number: "1",  x: "5",  y: "40", position: "GK" },
@@ -119,11 +119,11 @@ export const emptyPlayers = (): FormPlayer[] =>
 
 /** Simulation presets themed after the demo fixtures (stylised what-ifs, not replays). */
 export const SIM_PRESETS = [
-  { id: "anfield-2023", title: "Anfield 2023 · High Press v Counter", subtitle: "Liverpool 7-0 Man Utd: Klopp's press against a transition side", tactic_a: "high_press", tactic_b: "counter_attack", team_size: 5, steps: 400, seed: 7 },
-  { id: "istanbul-2005", title: "Istanbul 2005 · Possession v Low Block", subtitle: "Milan's control against a deep Liverpool block", tactic_a: "possession", tactic_b: "low_block", team_size: 7, steps: 500, seed: 2005 },
-  { id: "lusail-2022", title: "Lusail 2022 · Possession v Counter", subtitle: "Argentina's control against France's transitions", tactic_a: "possession", tactic_b: "counter_attack", team_size: 7, steps: 500, seed: 2022 },
-  { id: "wembley-2011", title: "Wembley 2011 · Possession v Narrow Block", subtitle: "Barcelona's tiki-taka against United's compact midfield", tactic_a: "possession", tactic_b: "narrow_play", team_size: 5, steps: 400, seed: 2011 },
-  { id: "montjuic-2025", title: "Montjuïc 2025 · High Line v Counter", subtitle: "Flick's high press against Mbappé's transitions", tactic_a: "high_press", tactic_b: "counter_attack", team_size: 5, steps: 400, seed: 43 },
+  { id: "anfield-2023", title: "Anfield 2023: High Press v Counter", subtitle: "Liverpool 7-0 Man Utd: Klopp's press against a transition side", tactic_a: "high_press", tactic_b: "counter_attack", team_size: 5, steps: 400, seed: 7 },
+  { id: "istanbul-2005", title: "Istanbul 2005: Possession v Low Block", subtitle: "Milan's control against a deep Liverpool block", tactic_a: "possession", tactic_b: "low_block", team_size: 7, steps: 500, seed: 2005 },
+  { id: "lusail-2022", title: "Lusail 2022: Possession v Counter", subtitle: "Argentina's control against France's transitions", tactic_a: "possession", tactic_b: "counter_attack", team_size: 7, steps: 500, seed: 2022 },
+  { id: "wembley-2011", title: "Wembley 2011: Possession v Narrow Block", subtitle: "Barcelona's tiki-taka against United's compact midfield", tactic_a: "possession", tactic_b: "narrow_play", team_size: 5, steps: 400, seed: 2011 },
+  { id: "montjuic-2025", title: "Montjuïc 2025: High Line v Counter", subtitle: "Flick's high press against Mbappé's transitions", tactic_a: "high_press", tactic_b: "counter_attack", team_size: 5, steps: 400, seed: 43 },
 ];
 
 /** Compare presets: two match-ups side by side. */

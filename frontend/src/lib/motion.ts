@@ -1,55 +1,62 @@
 /**
  * SpaceAI FC — shared motion presets
  * ===================================
- * One place for the timing curves used across pages so the product
- * feels consistent.  Built on `motion/react` (framer-motion's successor).
+ * One place for curves and springs so the product moves with one voice.
+ * Built on `motion/react` (framer-motion's successor). The matching CSS
+ * curves live in styles/theme.css as --ease-out / --ease-in-out.
+ *
+ * Rules the presets encode: entrances ease out, exits are shorter than
+ * entrances, nothing UI-level runs longer than ~500ms, stagger stays
+ * between 30 and 80ms.
  */
 
 import type { Transition, Variants } from "motion/react";
 
-export const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+export const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+export const EASE_IN_OUT: [number, number, number, number] = [0.77, 0, 0.175, 1];
 
-export const springSoft: Transition = { type: "spring", stiffness: 260, damping: 26 };
-export const springSnappy: Transition = { type: "spring", stiffness: 420, damping: 30 };
+/** Page-level spring: settles in ~350ms with no visible overshoot. */
+export const springPage: Transition = { type: "spring", stiffness: 300, damping: 30 };
+/** Indicators and toggles that slide between positions. */
+export const springSoft: Transition = { type: "spring", stiffness: 420, damping: 36 };
+/** Press feedback: ~150ms. */
+export const springPress: Transition = { type: "spring", stiffness: 600, damping: 32 };
 
-/** Page-level enter/exit used by the App-level AnimatePresence. */
+/** Page enter/exit used by the App-level AnimatePresence (mode="wait"). */
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 14 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE_OUT } },
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: springPage },
   // pointerEvents none stops clicks landing on a page that is animating out
-  exit: { opacity: 0, y: -8, pointerEvents: "none", transition: { duration: 0.15, ease: "easeIn" } },
+  exit: { opacity: 0, pointerEvents: "none", transition: { duration: 0.2, ease: EASE_OUT } },
 };
 
 /** Parent container that staggers its children. */
-export const staggerContainer = (stagger = 0.06, delay = 0.05): Variants => ({
+export const staggerContainer = (stagger = 0.05, delay = 0): Variants => ({
   hidden: {},
   show: { transition: { staggerChildren: stagger, delayChildren: delay } },
 });
 
 /** Child item for `staggerContainer`. */
 export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } },
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE_OUT } },
 };
 
-export const fadeIn: Variants = {
+/** Content replacing a skeleton: a crossfade, not a pop. */
+export const crossfade: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.3 } },
+  show: { opacity: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit: { opacity: 0, transition: { duration: 0.15, ease: EASE_OUT } },
 };
 
-export const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.94 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: EASE_OUT } },
+/** Section reveal on scroll (used with whileInView, once). */
+export const reveal: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } },
 };
 
-/** Micro-interaction for buttons and clickable cards. */
+/** Press feedback for motion buttons. Hover styling stays in CSS. */
 export const pressable = {
-  whileHover: { scale: 1.02 },
-  whileTap: { scale: 0.97 },
-  transition: springSnappy,
-};
-
-export const cardHover = {
-  whileHover: { y: -3 },
-  transition: springSoft,
+  whileTap: { scale: 0.98 },
+  transition: springPress,
 };

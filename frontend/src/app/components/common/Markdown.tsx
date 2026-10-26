@@ -18,7 +18,7 @@ export function Markdown({ text, className }: { text: string; className?: string
             <ul key={bi} className="my-2 space-y-1.5 pl-1">
               {lines.map((l, li) => (
                 <li key={li} className="flex gap-2">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                  <span className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-[1px] bg-section-fill" />
                   <span>{inline(l.replace(/^\s*([•\-*]|\d+[.)])\s+/, ""))}</span>
                 </li>
               ))}
@@ -28,9 +28,9 @@ export function Markdown({ text, className }: { text: string; className?: string
         const heading = lines.length === 1 && /^#{1,3}\s+/.test(lines[0]);
         if (heading) {
           return (
-            <h4 key={bi} className="mt-3 mb-1 font-bold text-white">
+            <h3 key={bi} className="mb-1 mt-6 font-display text-2xl text-text-primary first:mt-0">
               {inline(lines[0].replace(/^#{1,3}\s+/, ""))}
-            </h4>
+            </h3>
           );
         }
         return (
@@ -49,16 +49,19 @@ export function Markdown({ text, className }: { text: string; className?: string
 }
 
 function inline(text: string): ReactNode[] {
+  // A whole line wrapped in underscores is italic even if it contains snake_case words.
+  const whole = /^_(.+)_$/.exec(text.trim());
+  if (whole) return [<em key="w" className="text-text-muted">{whole[1]}</em>];
   const out: ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g;
+  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*|(?<![\w])_[^_\n]+_(?![\w]))/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let k = 0;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) out.push(text.slice(last, m.index));
     const tok = m[0];
-    if (tok.startsWith("**")) out.push(<strong key={k++} className="font-bold text-white">{tok.slice(2, -2)}</strong>);
-    else if (tok.startsWith("`")) out.push(<code key={k++} className="rounded bg-white/10 px-1 py-0.5 text-[0.9em] text-brand">{tok.slice(1, -1)}</code>);
+    if (tok.startsWith("**")) out.push(<strong key={k++} className="font-semibold text-text-primary">{tok.slice(2, -2)}</strong>);
+    else if (tok.startsWith("`")) out.push(<code key={k++} className="rounded-sm bg-surface-3 px-1 py-0.5 text-[0.9em] text-text-primary">{tok.slice(1, -1)}</code>);
     else out.push(<em key={k++} className="text-text-secondary">{tok.slice(1, -1)}</em>);
     last = m.index + tok.length;
   }
